@@ -30,6 +30,18 @@ has 'long_option_mode' => ( is => 'ro',
                             default => 'REQUIRE_DOUBLE_DASH',
                             writer => '_set_long_option_mode',
                         );
+
+=head1 NAME
+
+Getopt::Flex::Config - Configuration class for Getopt::Flex
+
+=head1 METHODS
+
+=head2 BUILD
+
+This method is used by Moose, please do not attempt to use it
+
+=cut
                         
 sub BUILD {
     my ($self) = @_;

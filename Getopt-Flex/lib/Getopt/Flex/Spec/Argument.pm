@@ -92,7 +92,20 @@ has '_set' => ( is => 'rw',
                 default => 0,
                 predicate => 'is_set',
             );
-                
+            
+            
+=head1 NAME
+
+Getopt::Flex::Spec::Argument - Specification class for Getopt::Flex
+
+=head1 METHODS
+
+=head2 BUILD
+
+This method is used by Moose, please do not attempt to use it
+
+=cut
+
 sub BUILD {
     my ($self) = @_;
     
@@ -135,6 +148,12 @@ sub BUILD {
     $self->_set_aliases(\@aliases);
 }
 
+=head2 set_value
+
+Set the value of this argument
+
+=cut
+
 sub set_value {
     my ($self, $val) = @_;
     
@@ -173,6 +192,12 @@ sub set_value {
         &$fn($val);
     }
 }
+
+=head2 requires_val
+
+Check whether or not this argument requires a value
+
+=cut
 
 sub requires_val {
     my ($self) = @_;

@@ -17,6 +17,18 @@ has '_argmap' => ( is => 'rw',
                    init_arg => undef,
                 );
                 
+=head1 NAME
+
+Getopt::Flex::Spec - Specification class for Getopt::Flex
+
+=head1 METHODS
+
+=head2 BUILD
+
+This method is used by Moose, please do not attempt to use it
+
+=cut
+                
 sub BUILD {
     my ($self) = @_;
     
@@ -41,12 +53,23 @@ sub BUILD {
     $self->_argmap($argmap);
 }
 
-#one of our switches?
+=head2 check_switch
+
+Check whether or a not a switch belongs to this specification
+
+=cut
+
 sub check_switch {
     my ($self, $switch) = @_;
     
     return defined($self->_argmap()->{$switch});
 }
+
+=head2 set_switch
+
+Set a switch to the supplied value
+
+=cut
 
 sub set_switch {
     my ($self, $switch, $val) = @_;
@@ -55,6 +78,12 @@ sub set_switch {
     
     return $self->_argmap()->{$switch}->set_value($val);
 }
+
+=head2 switch_requires_val
+
+Check whether or not a switch requires a value
+
+=cut
 
 sub switch_requires_val {
     my ($self, $switch) = @_;

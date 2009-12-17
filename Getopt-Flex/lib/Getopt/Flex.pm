@@ -35,6 +35,7 @@ has '_config' => ( is => 'rw',
 has '_args' => ( is => 'rw',
                  isa => 'ArrayRef',
                  init_arg => undef,
+                 default => sub { my @a = Clone::clone(@ARGV); return \@a },
                ); 
                
 has 'valid_args' => ( is => 'ro',
@@ -61,7 +62,19 @@ has 'extra_args' => ( is => 'ro',
 has 'usage' => ( is => 'ro',
                  isa => 'Str',
                 );
-               
+
+=head1 NAME
+
+Getopt::Flex - Option parsing, done differently
+
+=head1 METHODS
+
+=head2 BUILD
+
+This method is used by Moose, please do not attempt to use it
+
+=cut
+
 sub BUILD {
     my $self = shift;
     
@@ -73,6 +86,13 @@ sub BUILD {
     
     return;
 }
+
+=head2 getopts
+
+Invoking this method will cause the module to parse its current arguments array,
+and apply any values found to the appropriate matched references provided.
+
+=cut
 
 sub getopts {
     my ($self) = @_;
@@ -288,11 +308,23 @@ sub _parse_bundled_switch {
     return %rh;
 }
 
+=head2 set_args
+
+Set the array of args to be parsed.
+
+=cut
+
 sub set_args {
     my $self = shift @_;
     
     return $self->_args(clone(@_));
 }
+
+=head2 get_args
+
+Get the array of args to be parsed.
+
+=cut
 
 sub get_args {
     my ($self) = @_;
@@ -300,24 +332,54 @@ sub get_args {
     return $self->_args;
 }
 
+=head2 num_valid_args
+
+After parsing, this returns the number of valid switches passed to the script.
+
+=cut
+
 sub num_valid_args {
     my ($self) = @_;
     return $#{$self->valid_args} + 1;
 }
+
+=head2 num_invalid_args
+
+After parsing, this returns the number of invalid switches passed to the script.
+
+=cut
 
 sub num_invalid_args {
     my ($self) = @_;
     return $#{$self->invalid_args} + 1;
 }
 
+=head2 num_extra_args
+
+After parsing, this returns anything that wasn't matched to a switch, or that was not a switch at all.
+
+=cut
+
 sub num_extra_args {
     my ($self) = @_;
     return $#{$self->extra_args} + 1;
 }
 
+=head2 get_usage
+
+This returns an automatically generated usage message
+
+=cut
+
 sub get_usage {
     
 }
+
+=head2 get_help
+
+This returns an automatically generated help message
+
+=cut
 
 sub get_help {
     
