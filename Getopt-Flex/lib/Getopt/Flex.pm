@@ -41,6 +41,7 @@ has '_args' => ( is => 'rw',
 has 'valid_args' => ( is => 'ro',
                       isa => 'ArrayRef[Str]',
                       writer => '_set_valid_args',
+                      reader => '_get_valid_args',
                       init_arg => undef,
                       default => sub { [] },
                     );
@@ -48,6 +49,7 @@ has 'valid_args' => ( is => 'ro',
 has 'invalid_args' => ( is => 'ro',
                         isa => 'ArrayRef[Str]',
                         writer => '_set_invalid_args',
+                        reader => '_get_invalid_args',
                         init_arg => undef,
                         default => sub { [] },
                     );
@@ -55,6 +57,7 @@ has 'invalid_args' => ( is => 'ro',
 has 'extra_args' => ( is => 'ro',
                       isa => 'ArrayRef[Str]',
                       writer => '_set_extra_args',
+                      reader => '_get_extra_args',
                       init_arg => undef,
                       default => sub { [] },
                     );
@@ -99,9 +102,10 @@ sub getopts {
     
     my @args;
     if(!defined($self->_args())) {
-        @args = $self->_args(clone(@ARGV));
+        my @a = Clone::clone(@ARGV);
+        @args = @{$self->_args(\@a)};
     } else {
-        @args = $self->_args();
+        @args = @{$self->_args()};
     }
     
     my @valid_args = ();
@@ -110,20 +114,21 @@ sub getopts {
     
     for(my $i = 0; $i <= $#args; ++$i) {
         my $item = $args[$i];
-        if(_is_switch($item)) {
-            my $ret = _parse_switch($item);
+        if($self->_is_switch($item)) {
+            my $ret = $self->_parse_switch($item);
             if(ref($ret) eq 'SCALAR') {
+                $ret = $$ret;
                 if($self->_spec()->check_switch($ret)) {
                     if($self->_spec()->switch_requires_val($ret)) {
                         #peek forward in args
-                        if(!_is_switch($args[$i+1])) {
+                        if($i+1 <= $#args && !$self->_is_switch($args[$i+1])) {
                             $self->_spec()->set_switch($ret, $args[$i+1]);
                             push(@valid_args, $ret);
                             ++$i;
                         } else {
-                            confess "switch $ret requires value, but none given\n";
+                            Carp::confess "switch $ret requires value, but none given\n";
                         }
-                    } else {
+                    } else {;
                         $self->_spec()->set_switch($ret, 1);
                         push(@valid_args, $ret);
                     }
@@ -139,16 +144,16 @@ sub getopts {
                             if($self->_spec()->switch_requires_val($key)) {
                                 #to peek or not to peek
                                 if($key eq $rh{'~~last'}) { #ok, peek
-                                    if(!_is_switch($args[$i+1])) {
+                                    if(!$self->_is_switch($args[$i+1])) {
                                         $self->_spec()->set_switch($key, $args[$i+1]);
                                         push(@valid_args, $key);
                                         ++$i;
                                     } else {
-                                        confess "switch $key requires value, but none given\n";
+                                        Carp::confess "switch $key requires value, but none given\n";
                                     }
                                 } else {
                                     #FFFUUUU
-                                    confess "switch $key requires value, but none given\n";
+                                    Carp::confess "switch $key requires value, but none given\n";
                                 }
                             } else {
                                 $self->_spec()->set_switch($key, 1);
@@ -166,7 +171,7 @@ sub getopts {
             } elsif(ref($ret) eq 'ARRAY') {    
                 my @arr = @{$ret};
                 if($#arr != 1) {
-                    confess "array is wrong length, should never happen\n";
+                    Carp::confess "array is wrong length, should never happen\n";
                 } else {
                     if($self->_spec()->check_switch($arr[0])) {
                         $self->_spec()->set_switch($arr[0], $arr[1]);
@@ -175,24 +180,39 @@ sub getopts {
                         push(@invalid_args, $arr[0]);
                     }
                 }
+            } elsif(!defined($ret)) {    
+                Carp::cluck "found invalid switch $ret\n";
             } else {
                 my $rt = ref($ret);
-                confess "returned illegal ref type $rt\n" 
+                Carp::confess "returned val $ret of illegal ref type $rt\n" 
             }
         } else {
             push(@extra_args, $item);
         }
     }
     
-    $self->_set_valid_args(@valid_args);
-    $self->_set_invalid_args(@invalid_args);
-    $self->_set_extra_args(@extra_args);
+    #check to see that all required args were set
+    my $argmap = $self->_spec()->_argmap();
+    foreach my $alias (keys %{$argmap}) {
+        if($argmap->{$alias}->required() && !$argmap->{$alias}->is_set()) {
+            my $spec = $argmap->{$alias}->switchspec();
+            Carp::confess "missing required switch with spec $spec\n";
+        }
+    }
+    
+    $self->_set_valid_args(\@valid_args);
+    $self->_set_invalid_args(\@invalid_args);
+    $self->_set_extra_args(\@extra_args);
     
     return;
 }
 
 sub _is_switch {
     my ($self, $switch) = @_;
+    
+    if(!defined($switch)) {
+        return 0;
+    }
     
     #does he look like a switch?
     return $switch =~ /^(-|--)[a-zA-Z0-9?][a-zA-Z0-9=_?-]*/;
@@ -201,19 +221,19 @@ sub _is_switch {
 sub _parse_switch {
     my ($self, $switch) = @_;
     
-    my $switch_type = _switch_type($switch);
+    my $switch_type = $self->_switch_type($switch);
     
     if($switch_type == $_ST_LONG) {
-        return _parse_long_switch($switch);
+        return $self->_parse_long_switch($switch);
     } elsif($switch_type == $_ST_SHORT) {
-        return _parse_short_switch($switch);
+        return $self->_parse_short_switch($switch);
     } elsif($switch_type == $_ST_BUNDLED) {
-        return _parse_bundled_switch($switch);
+        return $self->_parse_bundled_switch($switch);
     } elsif($switch_type == $_ST_NONE) {
         return undef;
     } else {
         #something is wrong here...
-        confess "returned illegal switch type $switch_type\n";
+        Carp::confess "returned illegal switch type $switch_type\n";
     }
 }
 
@@ -249,14 +269,14 @@ sub _switch_type {
 sub _parse_long_switch {
     my ($self, $switch) = @_;
     
-    $switch =~ s/^(-|--)//;
+    $switch =~ s/^(--|-)//;
     
     my @vals = split(/=/, $switch, 2);
     
     if($#vals == 0) {
-        return $vals[0];
+        return \$vals[0];
     } else {
-        return ($vals[0], $vals[1]);
+        return [$vals[0], $vals[1]];
     }
 }
 
@@ -266,12 +286,12 @@ sub _parse_short_switch {
     $switch =~ s/^-//;
     
     if(length($switch) == 1) {
-        return $switch;
+        return \$switch;
     } elsif(index($switch, '=') >= 0) {
         my @vals = split(/=/, $switch, 2);
-        return ($vals[0] => $vals[1]);
+        return {$vals[0] => $vals[1]};
     } else {
-        return (substr($switch, 0, 1), substr($switch, 1));
+        return [substr($switch, 0, 1), substr($switch, 1)];
     }
 }
 
@@ -297,7 +317,7 @@ sub _parse_bundled_switch {
             } else { #oops, illegal switch
                 #should never get here, make sure switch
                 #is valid and of correct type sooner
-                confess "illegal switch $switch\n";
+                Carp::confess "illegal switch $switch\n";
             } 
         }
         $last_switch = $c;
@@ -305,31 +325,31 @@ sub _parse_bundled_switch {
     
     $rh{'~~last'} = $last_switch;
     
-    return %rh;
+    return \%rh;
 }
 
 =head2 set_args
 
-Set the array of args to be parsed.
+Set the array of args to be parsed. Expects an array reference.
 
 =cut
 
 sub set_args {
-    my $self = shift @_;
-    
-    return $self->_args(clone(@_));
+    my ($self, $ref) = @_;
+    my $args = Clone::clone($ref);
+    return $self->_args($args);
 }
 
 =head2 get_args
 
-Get the array of args to be parsed.
+Get the array of args to be parsed. Returns an array reference.
 
 =cut
 
 sub get_args {
     my ($self) = @_;
     
-    return $self->_args;
+    return Clone::clone($self->_args);
 }
 
 =head2 num_valid_args
@@ -343,6 +363,11 @@ sub num_valid_args {
     return $#{$self->valid_args} + 1;
 }
 
+sub get_valid_args {
+    my ($self) = @_;
+    return @{Clone::clone($self->_get_valid_args())};
+}
+
 =head2 num_invalid_args
 
 After parsing, this returns the number of invalid switches passed to the script.
@@ -354,6 +379,11 @@ sub num_invalid_args {
     return $#{$self->invalid_args} + 1;
 }
 
+sub get_invalid_args {
+    my ($self) = @_;
+    return @{Clone::clone($self->_get_invalid_args())};
+}
+
 =head2 num_extra_args
 
 After parsing, this returns anything that wasn't matched to a switch, or that was not a switch at all.
@@ -363,6 +393,11 @@ After parsing, this returns anything that wasn't matched to a switch, or that wa
 sub num_extra_args {
     my ($self) = @_;
     return $#{$self->extra_args} + 1;
+}
+
+sub get_extra_args {
+    my ($self) = @_;
+    return @{Clone::clone($self->_get_extra_args())};
 }
 
 =head2 get_usage

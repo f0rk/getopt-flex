@@ -89,7 +89,6 @@ has 'default' => ( is => 'ro',
 has '_set' => ( is => 'rw',
                 isa => 'Int',
                 init_arg => undef,
-                default => 0,
                 predicate => 'is_set',
             );
             
@@ -111,7 +110,7 @@ sub BUILD {
     
     my $reft = ref($self->var());
     if($reft eq none(qw(ARRAY HASH SCALAR))) {
-        confess "supplied var must be a reference to an ARRAY, HASH, or SCALAR\n";
+        Carp::confess "supplied var must be a reference to an ARRAY, HASH, or SCALAR\n";
     }
     
     if($reft eq any(qw(ARRAY HASH))) {
@@ -119,7 +118,7 @@ sub BUILD {
         
         if($self->type() !~ $re) {
             my $type = $self->type();
-            confess "supplied var has wrong type $type\n";
+            Carp::confess "supplied var has wrong type $type\n";
         }
     }
     
@@ -131,14 +130,24 @@ sub BUILD {
     if($self->has_default() && !Moose::Util::TypeConstraints::find_or_parse_type_constraint($self->type())->check($self->default())) {
         my $def = $self->default();
         my $type = $self->type();
-        confess "default $def fails type constraint $type\n";
+        Carp::confess "default $def fails type constraint $type\n";
     }
     
     if($self->has_default() && $self->has_validator()) {
         my $fn = $self->validator();
         if(!&$fn($self->default())) {
             my $def = $self->default();
-            confess "default $def fails supplied validation check\n";
+            Carp::confess "default $def fails supplied validation check\n";
+        }
+    }
+    
+    if($self->has_default()) {
+        if($self->type() =~ /^ArrayRef|^HashRef/) {
+            my $var = $self->var() ;
+            $var = $self->default();
+        } else { #scalar
+            my $var = $self->var();
+            $$var = $self->default();
         }
     }
     
@@ -157,25 +166,34 @@ Set the value of this argument
 sub set_value {
     my ($self, $val) = @_;
     
-    $self->type() =~ m/([a-zA-Z]+)\[([a-zA-Z]+)\]/;
-    my $m = $1;
-    my $p = $2;
+    my $type = $self->type();
+    if($type =~ m/^([a-zA-Z]+)\[([a-zA-Z]+)\]$/) {
+        $type = $2;
+    }
     
-    if(!Moose::Util::TypeConstraints::find_type_constraint($p)->check($val)) {
-        my $type = $self->type();
-        confess "Invalid value $val does not conform to type constraint $type\n";
-    } elsif(defined($self->validator)) {
+    if($self->type !~ /HashRef/) {
+        if(!Moose::Util::TypeConstraints::find_type_constraint($type)->check($val)) {
+            Carp::confess "Invalid value $val does not conform to type constraint $type\n";
+        }
+    } else {
+        my @kv = split(/=/, $val);
+        if(!Moose::Util::TypeConstraints::find_type_constraint($type)->check($kv[1])) {
+            Carp::confess "Invalid value $kv[1] does not conform to type constraint $type\n";
+        }
+    }
+    
+    if(defined($self->validator)) {
         my $fn = $self->validator;
         if(!&$fn($val)) {
-            confess "Invalid value $val fails supplied validation check\n";
+            Carp::confess "Invalid value $val fails supplied validation check\n";
         }
     }
     
     #handle different types
     my $var = $self->var;
-    if($self->type eq 'ArrayRef') {
+    if($self->type =~ /ArrayRef/) {
         push(@$var, $val);
-    } elsif($self->type eq 'HashRef') {
+    } elsif($self->type =~ /HashRef/) {
         my @kv = split(/=/, $val);
         $var->{$kv[0]} = $kv[1];
     } elsif($self->type eq 'Inc') {
@@ -202,7 +220,7 @@ Check whether or not this argument requires a value
 sub requires_val {
     my ($self) = @_;
     
-    return !($self->type eq any(qw(Bool Inc)));
+    return $self->type eq none(qw(Bool Inc));
 }
 
 no Moose;

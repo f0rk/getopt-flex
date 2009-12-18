@@ -45,7 +45,7 @@ sub BUILD {
             #no duplicate aliases (or primary names) allowed
             if(defined($argmap->{$alias})) {
                 my $sp = $argmap->{$alias}->switchspec();
-                confess "alias $alias given by spec $switch_spec already exists and belongs to spec $sp\n";
+                Carp::confess "alias $alias given by spec $switch_spec already exists and belongs to spec $sp\n";
             }
             $argmap->{$alias} = $argument;
         }
@@ -74,7 +74,7 @@ Set a switch to the supplied value
 sub set_switch {
     my ($self, $switch, $val) = @_;
     
-    confess "No such switch $switch\n" if !$self->check_switch($switch);
+    Carp::confess "No such switch $switch\n" if !$self->check_switch($switch);
     
     return $self->_argmap()->{$switch}->set_value($val);
 }
@@ -88,9 +88,9 @@ Check whether or not a switch requires a value
 sub switch_requires_val {
     my ($self, $switch) = @_;
     
-    confess "No such switch $switch\n" if !$self->check_switch($switch);
+    Carp::confess "No such switch $switch\n" if !$self->check_switch($switch);
     
-    return $self->_argmap()->{$switch}->requires_val($switch);
+    return $self->_argmap()->{$switch}->requires_val();
 }
 
 no Moose;
