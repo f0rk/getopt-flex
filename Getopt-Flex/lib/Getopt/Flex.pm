@@ -6,6 +6,7 @@ use MooseX::StrictConstructor;
 use Readonly;
 use Getopt::Flex::Config;
 use Getopt::Flex::Spec;
+use Perl6::Junction qw(any);
 
 Readonly::Scalar my $_ST_LONG => 1;
 Readonly::Scalar my $_ST_SHORT => 2;
@@ -64,6 +65,7 @@ has 'extra_args' => ( is => 'ro',
                     
 has 'usage' => ( is => 'ro',
                  isa => 'Str',
+                 default => '',
                 );
 
 =head1 NAME
@@ -253,7 +255,7 @@ sub _switch_type {
             } else { #could be short, bundled, or none
                 $switch =~ s/^-//;
                 my $c1 = substr($switch, 0, 1);
-                my $c2 = substr($switch, 1, 2);
+                my $c2 = substr($switch, 1, 1);
                 if(!$self->_spec()->check_switch($c1)) {
                     return $_ST_NONE;
                 } elsif($self->_spec()->check_switch($c1) && !$self->_spec()->check_switch($c2)) {
@@ -304,8 +306,18 @@ sub _parse_bundled_switch {
     
     my $last_switch;
     for(my $i = 0; $i < length($switch); ++$i) {
-        my $c = substr($switch, $i, $i + 1);
-        if($self->_spec()->check_switch($c)) {
+        my $c = substr($switch, $i, 1);
+        if($c eq any(keys %rh)) {
+            #switch appears again in bundle, rest of string is an argument to last switch
+            if(defined($last_switch)) {
+                $rh{$last_switch} = substr($switch, $i);
+            } else { #oops, illegal switch
+                #should never get here, make sure switch
+                #is valid and of correct type sooner
+                Carp::confess "illegal switch $switch\n";
+            }
+            $i = length($switch);
+        } elsif($self->_spec()->check_switch($c)) {
             $rh{$c} = undef;
         } else { #rest of the string was an argument to last switch
             if(defined($last_switch)) {
@@ -319,6 +331,7 @@ sub _parse_bundled_switch {
                 #is valid and of correct type sooner
                 Carp::confess "illegal switch $switch\n";
             } 
+            $i = length($switch);
         }
         $last_switch = $c;
     }
@@ -363,6 +376,12 @@ sub num_valid_args {
     return $#{$self->valid_args} + 1;
 }
 
+=head2 get_valid_args
+
+After parsing, this returns the valid arguments passed to the script.
+
+=cut
+
 sub get_valid_args {
     my ($self) = @_;
     return @{Clone::clone($self->_get_valid_args())};
@@ -379,6 +398,12 @@ sub num_invalid_args {
     return $#{$self->invalid_args} + 1;
 }
 
+=head2 get_invalid_args
+
+After parsing, this returns the invalid arguments passed to the script.
+
+=cut
+
 sub get_invalid_args {
     my ($self) = @_;
     return @{Clone::clone($self->_get_invalid_args())};
@@ -394,6 +419,12 @@ sub num_extra_args {
     my ($self) = @_;
     return $#{$self->extra_args} + 1;
 }
+
+=head2 get_extra_args
+
+After parsing, this returns the extra parameter passed to the script.
+
+=cut
 
 sub get_extra_args {
     my ($self) = @_;

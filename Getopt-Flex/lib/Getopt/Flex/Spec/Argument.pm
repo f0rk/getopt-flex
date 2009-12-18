@@ -171,36 +171,22 @@ sub set_value {
         $type = $2;
     }
     
-    if($self->type !~ /HashRef/) {
-        if(!Moose::Util::TypeConstraints::find_type_constraint($type)->check($val)) {
-            Carp::confess "Invalid value $val does not conform to type constraint $type\n";
-        }
-    } else {
-        my @kv = split(/=/, $val);
-        if(!Moose::Util::TypeConstraints::find_type_constraint($type)->check($kv[1])) {
-            Carp::confess "Invalid value $kv[1] does not conform to type constraint $type\n";
-        }
-    }
-    
-    if(defined($self->validator)) {
-        my $fn = $self->validator;
-        if(!&$fn($val)) {
-            Carp::confess "Invalid value $val fails supplied validation check\n";
-        }
-    }
-    
     #handle different types
     my $var = $self->var;
     if($self->type =~ /ArrayRef/) {
+        $self->_check_val($type, $val);
         push(@$var, $val);
     } elsif($self->type =~ /HashRef/) {
         my @kv = split(/=/, $val);
+        $self->_check_val($type, $kv[1]);
         $var->{$kv[0]} = $kv[1];
+        $val = $kv[1];
     } elsif($self->type eq 'Inc') {
         ++$$var;
     } elsif($self->type eq 'Bool') {
         $$var = 1;
     } else {
+        $self->_check_val($type, $val);
         $$var = $val;
     }
     $self->_set(1);
@@ -208,6 +194,21 @@ sub set_value {
     if(defined($self->callback)) {
         my $fn = $self->callback;
         &$fn($val);
+    }
+}
+
+sub _check_val {
+    my ($self, $type, $val) = @_;
+    
+    if(!Moose::Util::TypeConstraints::find_type_constraint($type)->check($val)) {
+        Carp::confess "Invalid value $val does not conform to type constraint $type\n";
+    }
+    
+    if(defined($self->validator)) {
+        my $fn = $self->validator;
+        if(!&$fn($val)) {
+            Carp::confess "Invalid value $val fails supplied validation check\n";
+        }
     }
 }
 
