@@ -1,5 +1,5 @@
 use Getopt::Flex;
-use Test::More tests => 55;
+use Test::More tests => 56;
 use Test::Exception;
 
 use warnings;
@@ -463,3 +463,6 @@ dies_ok { Getopt::Flex->new({spec => {'recurse|r' => {'var' => \$file, 'type' =>
 
 #bad, invalid config
 dies_ok { Getopt::Flex->new({spec => {'foo|f' => {'var' => \$foo, 'type' => 'Int'}}, config => {'foo' => 'bar'}}) } 'Dies with invalid config';
+
+#bad, invalid config
+dies_ok { Getopt::Flex->new({spec => {'foo|f' => {'var' => \$foo, 'type' => 'Int'}}, config => {'bundling' => 1, 'long_option_mode' => 'SINGLE_OR_DOUBLE'}}) } 'Dies with invalid config';

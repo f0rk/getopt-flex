@@ -16,7 +16,7 @@ subtype 'Inc'
 #special type defining what a switch spec should look like            
 subtype 'SwitchSpec'
             => as 'Str'
-            => where { $_ =~ m/^[a-zA-Z0-9|_?-]+$/ && $_ !~ m/\|\|/ };
+            => where { $_ =~ m/^[a-zA-Z0-9|_?-]+$/ && $_ !~ m/\|\|/ && $_ !~ /--/ && $_ !~ /-$/ };
 
 #special type defining what a parsed  switch should look like          
 subtype 'Switch'
@@ -110,11 +110,12 @@ has '_set' => (
 
 Getopt::Flex::Spec::Argument - Specification class for Getopt::Flex
 
+=head1 DESCRIPTION
+
+This class is only meant to be used by Getopt::Flex::Spec
+and should not be used directly.
+
 =head1 METHODS
-
-=head2 BUILD
-
-This method is used by Moose, please do not attempt to use it
 
 =cut
 
@@ -320,6 +321,14 @@ sub requires_val {
     my ($self) = @_;
     return $self->type eq none(qw(Bool Inc));
 }
+
+=begin Pod::Coverage
+
+  BUILD
+
+=end Pod::Coverage
+
+=cut
 
 no Moose;
 

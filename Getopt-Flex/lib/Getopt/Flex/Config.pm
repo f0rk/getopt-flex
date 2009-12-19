@@ -27,6 +27,7 @@ has 'bundling' => (
     is => 'ro',
     isa => 'Bool',
     default => 0,
+    predicate => '_has_bundling',
 );
                 
 #what kind of dashes are expected for
@@ -36,6 +37,7 @@ has 'long_option_mode' => (
     isa => 'LongOptionMode',
     default => 'REQUIRE_DOUBLE_DASH',
     writer => '_set_long_option_mode',
+    predicate => '_has_long_option_mode',
 );
                     
 #how do I use this thing?
@@ -56,16 +58,24 @@ has 'desc' => (
 
 Getopt::Flex::Config - Configuration class for Getopt::Flex
 
+=head1 DESCRIPTION
+
+This class is only meant to be used by Getopt::Flex
+and should not be used directly.
+
 =head1 METHODS
-
-=head2 BUILD
-
-This method is used by Moose, please do not attempt to use it
 
 =cut
                         
 sub BUILD {
     my ($self) = @_;
+    
+    #die if configured wrong
+    if($self->_has_bundling() && $self->_has_long_option_mode()) {
+        if($self->bundling() && $self->long_option_mode() eq 'SINGLE_OR_DOUBLE') {
+            Carp::confess "Cannot configure with bundling set to true and long_option_mode set to SINGLE_OR_DOUBLE\n";
+        }
+    }
     
     #automatically set the long_option_mode
     if($self->bundling) {
@@ -77,6 +87,14 @@ sub BUILD {
         $self->_set_non_option_mode('STOP');
     }
 }
+
+=begin Pod::Coverage
+
+  BUILD
+
+=end Pod::Coverage
+
+=cut
 
 no Moose;
 

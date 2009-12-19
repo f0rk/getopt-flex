@@ -23,11 +23,12 @@ has '_argmap' => (
 
 Getopt::Flex::Spec - Specification class for Getopt::Flex
 
+=head1 DESCRIPTION
+
+This class is only meant to be used by Getopt::Flex
+and should not be used directly.
+
 =head1 METHODS
-
-=head2 BUILD
-
-This method is used by Moose, please do not attempt to use it
 
 =cut
                 
@@ -97,6 +98,14 @@ sub switch_requires_val {
     
     return $self->_argmap()->{$switch}->requires_val();
 }
+
+=begin Pod::Coverage
+
+  BUILD
+
+=end Pod::Coverage
+
+=cut
 
 no Moose;
 
