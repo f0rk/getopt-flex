@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 86;
+use Test::More tests => 89;
 use Test::Exception;
 use Getopt::Flex;
 
@@ -33,7 +33,13 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foobag);
 $op->set_args(\@args);
 $op->getopts();
+my @va = $op->get_valid_args();
+my @ia = $op->get_invalid_args();
+my @ea = $op->get_extra_args();
 is($foo, 'cats', '--foo left unset with cats');
+is($#va, -1, 'va contains 0 values');
+is($#ia, 0, 'ia contains 1 values');
+is($#ea, -1, 'ea contains 0 values');
 
 $foo = 'bats';
 $op = Getopt::Flex->new({spec => $sp});

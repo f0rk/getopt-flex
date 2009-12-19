@@ -8,37 +8,49 @@ use Getopt::Flex::Config;
 use Getopt::Flex::Spec;
 use Perl6::Junction qw(any);
 
+#return values for the function that
+#determines the type of switch it is
+#inspecting
 Readonly::Scalar my $_ST_LONG => 1;
 Readonly::Scalar my $_ST_SHORT => 2;
 Readonly::Scalar my $_ST_BUNDLED => 3;
 Readonly::Scalar my $_ST_NONE => 4;
 
+#the raw spec defining the options to be parsed
+#and how they are to be handled
 has 'spec' => ( is => 'ro',
                 isa => 'HashRef[HashRef[Str|CodeRef|ScalarRef|ArrayRef|HashRef]]',
                 required => 1,
                );
 
+#the parsed Getopt::Flex::Spec object
 has '_spec' => ( is => 'rw',
                 isa => 'Getopt::Flex::Spec',
                 init_arg => undef,
                );
-               
+
+#the raw config defining any relevant configuration
+#parameters               
 has 'config' => ( is => 'ro',
                   isa => 'HashRef[Str]',
                   default => sub { {} },
                 );
-                
+
+#the parsed Getopt::Flex::Config object                
 has '_config' => ( is => 'rw',
                   isa => 'Getopt::Flex::Config',
                   init_arg => undef,
                 );
-                
+
+#the arguments passed to the calling script,
+#clones @ARGV so it won't be modified                
 has '_args' => ( is => 'rw',
                  isa => 'ArrayRef',
                  init_arg => undef,
                  default => sub { my @a = Clone::clone(@ARGV); return \@a },
                ); 
-               
+
+#an array of the valid switches passed to the script               
 has 'valid_args' => ( is => 'ro',
                       isa => 'ArrayRef[Str]',
                       writer => '_set_valid_args',
@@ -46,7 +58,8 @@ has 'valid_args' => ( is => 'ro',
                       init_arg => undef,
                       default => sub { [] },
                     );
-                    
+
+#an array of the invalid switches passed to the script                    
 has 'invalid_args' => ( is => 'ro',
                         isa => 'ArrayRef[Str]',
                         writer => '_set_invalid_args',
@@ -54,7 +67,8 @@ has 'invalid_args' => ( is => 'ro',
                         init_arg => undef,
                         default => sub { [] },
                     );
-                    
+
+#an array of anything that wasn't a switch that was encountered                    
 has 'extra_args' => ( is => 'ro',
                       isa => 'ArrayRef[Str]',
                       writer => '_set_extra_args',
@@ -165,9 +179,11 @@ sub getopts {
                         }
                     } else {
                         #no such switch
-                        push(@invalid_args, $key);
-                        if($self->_config()->non_option_mode() eq 'STOP') {
-                            last;
+                        if($key ne '~~last') {
+                            push(@invalid_args, $key);
+                            if($self->_config()->non_option_mode() eq 'STOP') {
+                                last;
+                            }
                         }
                     }
                 }
@@ -362,14 +378,14 @@ sub set_args {
 
 =head2 get_args
 
-Get the array of args to be parsed. Returns an array reference.
+Get the array of args to be parsed.
 
 =cut
 
 sub get_args {
     my ($self) = @_;
     
-    return Clone::clone($self->_args);
+    return @{Clone::clone($self->_args)};
 }
 
 =head2 num_valid_args

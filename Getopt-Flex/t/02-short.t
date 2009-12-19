@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 93;
+use Test::More tests => 102;
 use Test::Exception;
 use Getopt::Flex;
 
@@ -20,13 +20,25 @@ my $op = Getopt::Flex->new({spec => $sp});
 my @args = qw(-f bar);
 $op->set_args(\@args);
 $op->getopts();
+my @va = $op->get_valid_args();
+my @ia = $op->get_invalid_args();
+my @ea = $op->get_extra_args();
 is($foo, 'bar', '-f set with bar');
+is($#va, 0, 'va contains 1 value');
+is($#ia, -1, 'ia contains 0 values');
+is($#ea, -1, 'ea contains 0 values');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=baz);
 $op->set_args(\@args);
 $op->getopts();
+@va = $op->get_valid_args();
+@ia = $op->get_invalid_args();
+@ea = $op->get_extra_args();
 is($foo, 'baz', '-f set with baz');
+is($#va, 0, 'va contains 1 value');
+is($#ia, -1, 'ia contains 0 values');
+is($#ea, -1, 'ea contains 0 values');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-fbag);
@@ -56,8 +68,14 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f aaa -b bbb);
 $op->set_args(\@args);
 $op->getopts();
+@va = $op->get_valid_args();
+@ia = $op->get_invalid_args();
+@ea = $op->get_extra_args();
 is($foo, 'aaa', '-f set with aaa');
 is($bar, 'bbb', '-b set with bbb');
+is($#va, 1, 'va contains 2 values');
+is($#ia, -1, 'ia contains 0 values');
+is($#ea, -1, 'ea contains 0 values');
 
 #try out required
 $sp = {

@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 12;
+use Test::More tests => 15;
 use Getopt::Flex;
 
 my $foo;
@@ -29,9 +29,16 @@ my $op = Getopt::Flex->new({spec => $sp});
 my @args = qw(-fb -c=foo);
 $op->set_args(\@args);
 $op->getopts();
+my @va = $op->get_valid_args();
+my @ia = $op->get_invalid_args();
+my @ea = $op->get_extra_args();
+print $ia[0], "\n";
 ok($foo, '-f set to true');
 ok($bar, '-b set to true');
 is($cab, 'foo', '-c set to foo');
+is($#va, 2, 'va contains 3 values');
+is($#ia, -1, 'ia contains 0 values');
+is($#ea, -1, 'ea contains 0 values');
 
 $foo = 0;
 $bar = 0;
