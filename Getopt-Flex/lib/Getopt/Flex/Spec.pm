@@ -37,12 +37,16 @@ sub BUILD {
     my $spec = $self->spec();
     
     my $argmap = $self->_argmap();
+    
+    #create each argument in turn
     foreach my $switch_spec (keys %{$spec}) {
         $spec->{$switch_spec}->{'switchspec'} = $switch_spec;
         
         my $argument = Getopt::Flex::Spec::Argument->new($spec->{$switch_spec});
         
         my @aliases = @{$argument->aliases()};
+        
+        #map each argument onto its aliases
         foreach my $alias (@aliases) {
             #no duplicate aliases (or primary names) allowed
             if(defined($argmap->{$alias})) {
@@ -63,7 +67,6 @@ Check whether or a not a switch belongs to this specification
 
 sub check_switch {
     my ($self, $switch) = @_;
-    
     return defined($self->_argmap()->{$switch});
 }
 

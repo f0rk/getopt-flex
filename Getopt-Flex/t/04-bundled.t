@@ -32,7 +32,6 @@ $op->getopts();
 my @va = $op->get_valid_args();
 my @ia = $op->get_invalid_args();
 my @ea = $op->get_extra_args();
-print $ia[0], "\n";
 ok($foo, '-f set to true');
 ok($bar, '-b set to true');
 is($cab, 'foo', '-c set to foo');
