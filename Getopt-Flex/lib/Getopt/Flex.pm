@@ -62,11 +62,6 @@ has 'extra_args' => ( is => 'ro',
                       init_arg => undef,
                       default => sub { [] },
                     );
-                    
-has 'usage' => ( is => 'ro',
-                 isa => 'Str',
-                 default => '',
-                );
 
 =head1 NAME
 
@@ -136,6 +131,9 @@ sub getopts {
                     }
                 } else {
                     push(@invalid_args, $ret);
+                    if($self->_config()->non_option_mode() eq 'STOP') {
+                        last;
+                    }
                 }
             } elsif(ref($ret) eq 'HASH') {
                 my %rh = %{$ret};
@@ -168,6 +166,9 @@ sub getopts {
                     } else {
                         #no such switch
                         push(@invalid_args, $key);
+                        if($self->_config()->non_option_mode() eq 'STOP') {
+                            last;
+                        }
                     }
                 }
             } elsif(ref($ret) eq 'ARRAY') {    
@@ -180,6 +181,9 @@ sub getopts {
                         push(@valid_args, $arr[0]);
                     } else {
                         push(@invalid_args, $arr[0]);
+                        if($self->_config()->non_option_mode() eq 'STOP') {
+                            last;
+                        }
                     }
                 }
             } elsif(!defined($ret)) {    
@@ -190,6 +194,9 @@ sub getopts {
             }
         } else {
             push(@extra_args, $item);
+            if($self->_config()->non_option_mode() eq 'STOP') {
+                last;
+            }
         }
     }
     
@@ -433,22 +440,72 @@ sub get_extra_args {
 
 =head2 get_usage
 
-This returns an automatically generated usage message
+Returns the supplied usage message, or a single newline if none given.
 
 =cut
 
 sub get_usage {
+    my ($self) = @_;
     
+    if($self->_config()->usage() eq '') {
+        return "\n";
+    }
+    return 'Usage: '.$self->_config()->usage()."\n";
 }
 
 =head2 get_help
 
-This returns an automatically generated help message
+Returns an automatically generated help message
 
 =cut
 
 sub get_help {
+    my ($self) = @_;
     
+    my $argmap = $self->_spec()->_argmap();
+    my @primaries = ();
+    foreach my $key (keys %$argmap) {
+        if($argmap->{$key}->primary_name() eq $key && $argmap->{$key}->desc() ne '') {
+            push(@primaries, $key);
+        }
+    }
+    
+    my @help = ();
+    if($self->_config()->usage() ne '') {
+        push(@help, 'Usage: ');
+        push(@help, $self->_config()->usage());
+        push(@help, "\n\n");
+    }
+    
+    if($self->_config()->desc() ne '') {
+        push(@help, $self->_config()->desc());
+        push(@help, "\n\n");
+    }
+    
+    if($#primaries != -1) {
+        push(@help, "Options:\n\n");
+        foreach my $key (sort @primaries) {
+            if($argmap->{$key}->desc() ne '') {
+                push(@help, $argmap->{$key}->desc());
+            }
+        }
+    }
+    
+    if($help[$#help] =~ /\n\n$/) { pop(@help); push(@help, "\n"); }
+    
+    return join('', @help);
+}
+
+=head2 get_desc
+
+Returns the supplied description, or a single newline if none provided.
+
+=cut
+
+sub get_desc {
+    my ($self) = @_;
+    
+    return $self->_config()->desc()."\n";
 }
 
 no Moose;

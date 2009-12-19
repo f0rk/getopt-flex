@@ -24,73 +24,85 @@ subtype 'Switch'
             => where { $_ =~ m/^[a-zA-Z0-9_?-]+$/ };
 
 #the argument specification supplied
-has 'switchspec' => ( is => 'ro',
-                      isa => 'SwitchSpec',
-                      required => 1,
-                    );
+has 'switchspec' => (
+    is => 'ro',
+    isa => 'SwitchSpec',
+    required => 1,
+);
 
 #the primary name of this switch
-has 'primary_name' => ( is => 'ro',
-                        isa => 'Switch',
-                        writer => '_set_primary_name',
-                        init_arg => undef,
-                    );
+has 'primary_name' => (
+    is => 'ro',
+    isa => 'Switch',
+    writer => '_set_primary_name',
+    init_arg => undef,
+);
 
 #any aliases this switch has
-has 'aliases' => ( is => 'ro',
-                   isa => 'ArrayRef[Switch]',
-                   writer => '_set_aliases',
-                   init_arg => undef,
-                );
+has 'aliases' => (
+    is => 'ro',
+    isa => 'ArrayRef[Switch]',
+    writer => '_set_aliases',
+    init_arg => undef,
+);
 
 #the reference to the variable to populate when this switch is found
-has 'var' => ( is => 'ro',
-               isa => 'ScalarRef|ArrayRef|HashRef',
-               required => 1,
-            );
+has 'var' => (
+    is => 'ro',
+    isa => 'ScalarRef|ArrayRef|HashRef',
+    required => 1,
+);
 
 #the type of values to accept for this variable                
-has 'type' => ( is => 'ro',
-                isa => 'ValidType',
-                required => 1,
-            );
+has 'type' => (
+    is => 'ro',
+    isa => 'ValidType',
+    required => 1,
+);
 
 #the description of this variable, for autohelp
-has 'description' => ( is => 'ro',
-                       isa => 'Str',
-                       default => '',
-                    );
+has 'desc' => (
+    is => 'ro',
+    isa => 'Str',
+    default => '',
+    writer => '_set_desc',
+);
 
 #whether or not this switch must be found
-has 'required' => ( is => 'ro',
-                    isa => 'Int',
-                    default => 0,
-                );
+has 'required' => (
+    is => 'ro',
+    isa => 'Int',
+    default => 0,
+);
 
 #a function to call to validate the value found by this switch
-has 'validator' => ( is => 'ro',
-                     isa => 'CodeRef',
-                     predicate => 'has_validator',
-                );
+has 'validator' => (
+    is => 'ro',
+    isa => 'CodeRef',
+    predicate => 'has_validator',
+);
 
 #a function to call whenever this switch is found, passing in the
 #value found, if any
-has 'callback' => ( is => 'ro',
-                    isa => 'CodeRef',
-                );
+has 'callback' => (
+    is => 'ro',
+    isa => 'CodeRef',
+);
 
 #default to populate the provided variable reference with
-has 'default' => ( is => 'ro',
-                   isa => 'Str|ArrayRef|HashRef|CodeRef',
-                   predicate => 'has_default',
-                   writer => '_set_default',
-                );
+has 'default' => (
+    is => 'ro',
+    isa => 'Str|ArrayRef|HashRef|CodeRef',
+    predicate => 'has_default',
+    writer => '_set_default',
+);
                 
-has '_set' => ( is => 'rw',
-                isa => 'Int',
-                init_arg => undef,
-                predicate => 'is_set',
-            );
+has '_set' => (
+    is => 'rw',
+    isa => 'Int',
+    init_arg => undef,
+    predicate => 'is_set',
+);
             
             
 =head1 NAME
@@ -135,16 +147,35 @@ sub BUILD {
     
     if($self->has_default() && $self->has_validator()) {
         my $fn = $self->validator();
-        if(!&$fn($self->default())) {
-            my $def = $self->default();
-            Carp::confess "default $def fails supplied validation check\n";
+        if($self->type() =~ /^ArrayRef/) {
+            my @defs = @{$self->default()};
+            foreach my $def (@defs) {
+                if(!&$fn($def)) {
+                    Carp::confess "default $def fails supplied validation check\n";
+                }
+            }
+        } elsif($self->type() =~ /^HashRef/) {
+            my %defs = %{$self->default()};
+            foreach my $key (keys %defs) {
+                if(!&$fn($defs{$key})) {
+                    Carp::confess "default $defs{$key} (with key $key) fails supplied validation check\n";
+                }
+            }
+        } else {
+            if(!&$fn($self->default())) {
+                my $def = $self->default();
+                Carp::confess "default $def fails supplied validation check\n";
+            }
         }
     }
     
     if($self->has_default()) {
-        if($self->type() =~ /^ArrayRef|^HashRef/) {
-            my $var = $self->var() ;
-            $var = $self->default();
+        if($self->type() =~ /^ArrayRef/) {
+            my $var = $self->var();
+            @$var = @{$self->default()};
+        } elsif($self->type() =~ /^HashRef/) {
+            my $var = $self->var();
+            %$var = %{$self->default()};
         } else { #scalar
             my $var = $self->var();
             $$var = $self->default();
@@ -155,6 +186,60 @@ sub BUILD {
     
     $self->_set_primary_name($aliases[0]);
     $self->_set_aliases(\@aliases);
+    
+    #create appropriate description
+    if($self->desc() ne '') {
+        my @use = ();
+        foreach my $al (sort @{$self->aliases()}) {
+            if(length($al) < 22) { push(@use, $al) }
+        }
+        
+        $self->_set_desc($self->_create_desc_block(\@use));
+    }
+}
+
+sub _create_desc_block {
+    my ($self, $alsref) = @_;
+    
+    my @ret = ();
+    push(@ret, '  ');
+    my $os = $self->_create_option_string($alsref);
+    if($os =~ /^--/) {
+        push(@ret, '    ');
+    }
+    push(@ret, $os);
+    my $less = $os =~ /^--/ ? 4 : 0;
+    push(@ret, ' 'x(30-length($os)-$less));
+    push(@ret,$self->desc());
+    push(@ret,"\n");
+    
+    until((my $t = $self->_create_option_string($alsref)) eq '') {
+        if($t =~ /^--/) {
+            push(@ret, '      ');
+        } else {
+            push(@ret, '    ');
+        }
+        push(@ret, $t);
+        push(@ret, "\n");
+    }
+    
+    return join('', @ret);
+    
+}
+
+sub _create_option_string {
+    my ($self, $alsref) = @_;
+    my $ret = '';
+    while(my $sw = shift @$alsref) {
+        next if !defined($sw);
+        my $add = length($sw) == 1 ? '-' : '--';
+        $add .= $sw;
+        $add .= $#{$alsref} == -1 ? '' : ', ';
+        if(length($ret.$add) > 25) { unshift(@$alsref, $sw); last; }
+        $ret .= $add;
+    }
+    
+    return $ret;
 }
 
 =head2 set_value

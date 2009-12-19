@@ -1,5 +1,5 @@
 use Getopt::Flex;
-use Test::More tests => 54;
+use Test::More tests => 55;
 use Test::Exception;
 
 use warnings;
@@ -20,7 +20,7 @@ lives_ok { Getopt::Flex->new({spec => {
         'foo|f' => {
             'var' => \$foo,
             'type' => 'Str',
-            'description' => 'Describing this switch',
+            'desc' => 'Describing this switch',
             'required' => 0,
             'validator' => sub { $_[0] =~ m/foo/ },
             'callback' => sub { print "foo" },
@@ -460,3 +460,6 @@ dies_ok { Getopt::Flex->new({spec => {'foo' => 'bar'}}) } 'Dies with invalid has
 
 #bad, var is of wrong type
 dies_ok { Getopt::Flex->new({spec => {'recurse|r' => {'var' => \$file, 'type' => 'Int', 'default' => 'cats'}}}) } 'Dies with default fails type constraint';
+
+#bad, invalid config
+dies_ok { Getopt::Flex->new({spec => {'foo|f' => {'var' => \$foo, 'type' => 'Int'}}, config => {'foo' => 'bar'}}) } 'Dies with invalid config';

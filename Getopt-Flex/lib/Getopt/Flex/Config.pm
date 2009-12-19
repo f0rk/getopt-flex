@@ -8,28 +8,44 @@ enum 'NonOptionMode' => qw(IGNORE STOP);
             
 enum 'LongOptionMode' => qw(REQUIRE_DOUBLE_DASH SINGLE_OR_DOUBLE);
 
-has 'non_option_mode' => ( is => 'ro',
-                           isa => 'NonOptionMode',
-                           default => 'IGNORE',
-                           writer => '_set_non_option_mode',
-                           predicate => '_has_non_option_mode',
-                        );
+has 'non_option_mode' => (
+    is => 'ro',
+    isa => 'NonOptionMode',
+    default => 'IGNORE',
+    writer => '_set_non_option_mode',
+    predicate => '_has_non_option_mode',
+);
     
-has 'bundling' => ( is => 'ro',
-                    isa => 'Int',
-                    default => 0,
-                );
+has 'bundling' => (
+    is => 'ro',
+    isa => 'Int',
+    default => 0,
+);
                 
-has 'ignore_case' => ( is => 'ro',
-                       isa => 'Int',
-                       default => 0,
-                    );
+has 'ignore_case' => (
+    is => 'ro',
+    isa => 'Int',
+    default => 0,
+);
                     
-has 'long_option_mode' => ( is => 'ro',
-                            isa => 'LongOptionMode',
-                            default => 'REQUIRE_DOUBLE_DASH',
-                            writer => '_set_long_option_mode',
-                        );
+has 'long_option_mode' => (
+    is => 'ro',
+    isa => 'LongOptionMode',
+    default => 'REQUIRE_DOUBLE_DASH',
+    writer => '_set_long_option_mode',
+);
+                        
+has 'usage' => (
+    is => 'ro',
+    isa => 'Str',
+    default => '',
+);
+
+has 'desc' => (
+    is => 'ro',
+    isa => 'Str',
+    default => '',
+);
 
 =head1 NAME
 

@@ -5,17 +5,19 @@ use Getopt::Flex::Spec::Argument;
 use MooseX::StrictConstructor;
 
 #the raw specification            
-has 'spec' => ( is => 'ro',
-                isa => 'HashRef[HashRef[Str|CodeRef|ScalarRef|ArrayRef|HashRef]]',
-                required => 1,
-            );
+has 'spec' => (
+    is => 'ro',
+    isa => 'HashRef[HashRef[Str|CodeRef|ScalarRef|ArrayRef|HashRef]]',
+    required => 1,
+);
 
 #maps the various argument aliases onto their argument object
-has '_argmap' => ( is => 'rw',
-                   isa => 'HashRef[Getopt::Flex::Spec::Argument]',
-                   default => sub { {} },
-                   init_arg => undef,
-                );
+has '_argmap' => (
+    is => 'rw',
+    isa => 'HashRef[Getopt::Flex::Spec::Argument]',
+    default => sub { {} },
+    init_arg => undef,
+);
                 
 =head1 NAME
 
