@@ -9,7 +9,7 @@ use Getopt::Flex::Spec;
 use Perl6::Junction qw(any);
 
 #set the version
-our $VERSION   = '0.10';
+our $VERSION   = '0.11';
 $VERSION = eval $VERSION;
 
 #return values for the function that
