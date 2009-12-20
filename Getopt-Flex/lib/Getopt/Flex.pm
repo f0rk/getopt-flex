@@ -10,9 +10,6 @@ use Getopt::Flex::Config;
 use Getopt::Flex::Spec;
 use Perl6::Junction qw(any);
 
-#set the version
-our $VERSION   = '0.11';
-
 #return values for the function that
 #determines the type of switch it is
 #inspecting

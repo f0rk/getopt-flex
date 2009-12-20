@@ -8,9 +8,6 @@ use Moose::Util::TypeConstraints;
 use MooseX::StrictConstructor;
 use Perl6::Junction qw(any none);
 
-#set the version
-our $VERSION   = '0.11';
-
 #types an argument know how to be
 enum 'ValidType' => qw(Bool Str Num Int ArrayRef[Str] ArrayRef[Num] ArrayRef[Int] HashRef[Str] HashRef[Num] HashRef[Int] Inc);
 

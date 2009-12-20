@@ -6,9 +6,6 @@ use Moose;
 use Getopt::Flex::Spec::Argument;
 use MooseX::StrictConstructor;
 
-#set the version
-our $VERSION   = '0.11';
-
 #the raw specification            
 has 'spec' => (
     is => 'ro',
