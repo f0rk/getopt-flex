@@ -91,7 +91,7 @@ Getopt::Flex - Option parsing, done differently
   my $foo; my $use; my $num; my %has; my @arr;
   
   my $cfg = {
-      'long_option_mode' => 'STOP',
+      'non_option_mode' => 'STOP',
   };
   
   my $spec = {
