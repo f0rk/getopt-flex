@@ -1,5 +1,7 @@
 package Getopt::Flex;
 
+# ABSTRACT: Option parsing, done different.
+
 use Clone;
 use Moose;
 use MooseX::StrictConstructor;
@@ -10,7 +12,6 @@ use Perl6::Junction qw(any);
 
 #set the version
 our $VERSION   = '0.11';
-$VERSION = eval $VERSION;
 
 #return values for the function that
 #determines the type of switch it is

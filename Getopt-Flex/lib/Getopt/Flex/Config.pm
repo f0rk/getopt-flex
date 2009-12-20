@@ -1,8 +1,13 @@
 package Getopt::Flex::Config;
 
+# ABSTRACT: Getopt::Flex's way of handling config
+
 use Moose;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
+
+#set the version
+our $VERSION   = '0.11';
 
 #valid non_option_mode arguments
 enum 'NonOptionMode' => qw(IGNORE STOP);

@@ -1,8 +1,13 @@
 package Getopt::Flex::Spec;
 
+# ABSTRACT: Getopt::Flex's way of handling an option spec
+
 use Moose;
 use Getopt::Flex::Spec::Argument;
 use MooseX::StrictConstructor;
+
+#set the version
+our $VERSION   = '0.11';
 
 #the raw specification            
 has 'spec' => (
