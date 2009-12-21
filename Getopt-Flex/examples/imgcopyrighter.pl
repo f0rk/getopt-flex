@@ -69,7 +69,8 @@ if(!$op->getopts()) {
 }
            
 if($help) {
-   
+    print $op->get_help();
+    exit(0);
 }
   
 if($verbose) {
