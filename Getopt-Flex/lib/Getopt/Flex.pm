@@ -120,6 +120,7 @@ Getopt::Flex - Option parsing, done differently
   if(!$op->getopts()) {
       print "**ERROR**: ", $op->error();
       print $op->get_help();
+      exit(0);
   }
 
 =head1 DESCRIPTION

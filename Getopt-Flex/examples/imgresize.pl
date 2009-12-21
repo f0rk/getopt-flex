@@ -46,10 +46,13 @@ my $sp = {
 my $op = Getopt::Flex->new({config => $cfg, spec => $sp});
 if(!$op->getopts()) {
     print "**ERRPR**: ", $op->error();
+    print $op->get_help();
+    exit(0);
 }
 
 if($help) {
     print $op->get_help();
+    exit(0);
 }
 
 @formats = grep { /\S/ } split(/,/,join(',',@formats));
