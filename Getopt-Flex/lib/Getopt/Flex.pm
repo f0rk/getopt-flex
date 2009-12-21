@@ -91,6 +91,7 @@ has 'error' => (
     is => 'ro',
     isa => 'Str',
     writer => '_set_error',
+    reader => 'get_error',
     init_arg => undef,
     default => '',    
 );
@@ -118,7 +119,7 @@ Getopt::Flex - Option parsing, done differently
   
   my $op = Getopt::Flex->new({spec => $spec, config => $cfg});
   if(!$op->getopts()) {
-      print "**ERROR**: ", $op->error();
+      print "**ERROR**: ", $op->get_error();
       print $op->get_help();
       exit(0);
   }
@@ -157,7 +158,7 @@ Then, create a configuration, if necassary, like so:
 
   my $cfg = { 'non_option_mode' => 'STOP' };
 
-For more informatin about configuration, see L<Specifying a configuration>.
+For more information about configuration, see L<Specifying a configuration>.
 Then, create a specification, like so: 
 
   my $spec = {
@@ -174,7 +175,8 @@ And finally invoke the option processor with:
   $op->getopts();
 
 In the event of an error, C<getopts()> will return false,
-and set an error message which can be retrieved via C<error>.
+and set an error message which can be retrieved via C<get_error()>.
+For examples, please see the examples/ directory.
 
 =head2 Specifying Options
 
@@ -929,7 +931,7 @@ sub get_desc {
     return $self->_config()->desc()."\n";
 }
 
-=head2 error
+=head2 get_error
 
 Returns an error message if set, empty string otherwise.
 
