@@ -65,7 +65,7 @@ my $op = Getopt::Flex->new({config => $cfg, spec => $sp});
 if(!$op->getopts()) {
     print "**ERROR**: ", $op->error();
     print $op->get_help();
-    exit(0);
+    exit(1);
 }
            
 if($help) {
