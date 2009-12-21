@@ -1,7 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 17;
-use Test::Exception;
+use Test::More tests => 21;
 use Getopt::Flex;
 
 my $foo;
@@ -32,12 +31,14 @@ is($bar, 1.2, '-b set to 1.2');
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f bar -b 12);
 $op->set_args(\@args);
-dies_ok { $op->getopts() } 'Dies with value does not pass supplied validation';
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f baz -b 1.2);
 $op->set_args(\@args);
-dies_ok { $op->getopts() } 'Dies with value does not pass supplied validation';
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
 
 $sp = {
     'foo|f' => {
@@ -61,7 +62,8 @@ is($arr[2], 11, 'arr has 2nd elem 12');
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 11 -f 9);
 $op->set_args(\@args);
-dies_ok { $op->getopts() } 'Dies with value does not pass supplied validation';
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
 
 $sp = {
     'foo|f' => {
@@ -89,4 +91,5 @@ is($has{'cc'}, 11, 'key aa has value 11');
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f aa=11 -f bb=9);
 $op->set_args(\@args);
-dies_ok { $op->getopts() } 'Dies with value does not pass supplied validation';
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');

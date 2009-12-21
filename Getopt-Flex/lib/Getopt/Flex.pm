@@ -20,64 +20,81 @@ Readonly::Scalar my $_ST_NONE => 4;
 
 #the raw spec defining the options to be parsed
 #and how they are to be handled
-has 'spec' => ( is => 'ro',
-                isa => 'HashRef[HashRef[Str|CodeRef|ScalarRef|ArrayRef|HashRef]]',
-                required => 1,
-               );
+has 'spec' => (
+    is => 'ro',
+    isa => 'HashRef[HashRef[Str|CodeRef|ScalarRef|ArrayRef|HashRef]]',
+    required => 1,
+);
 
 #the parsed Getopt::Flex::Spec object
-has '_spec' => ( is => 'rw',
-                isa => 'Getopt::Flex::Spec',
-                init_arg => undef,
-               );
+has '_spec' => (
+    is => 'rw',
+    isa => 'Getopt::Flex::Spec',
+    init_arg => undef,
+);
 
 #the raw config defining any relevant configuration
 #parameters               
-has 'config' => ( is => 'ro',
-                  isa => 'HashRef[Str]',
-                  default => sub { {} },
-                );
+has 'config' => (
+    is => 'ro',
+    isa => 'HashRef[Str]',
+    default => sub { {} },
+);
 
 #the parsed Getopt::Flex::Config object                
-has '_config' => ( is => 'rw',
-                  isa => 'Getopt::Flex::Config',
-                  init_arg => undef,
-                );
+has '_config' => (
+    is => 'rw',
+    isa => 'Getopt::Flex::Config',
+    init_arg => undef,
+);
 
 #the arguments passed to the calling script,
 #clones @ARGV so it won't be modified                
-has '_args' => ( is => 'rw',
-                 isa => 'ArrayRef',
-                 init_arg => undef,
-                 default => sub { my @a = Clone::clone(@ARGV); return \@a },
-               ); 
+has '_args' => (
+    is => 'rw',
+    isa => 'ArrayRef',
+    init_arg => undef,
+    default => sub { my @a = Clone::clone(@ARGV); return \@a },
+); 
 
 #an array of the valid switches passed to the script               
-has 'valid_args' => ( is => 'ro',
-                      isa => 'ArrayRef[Str]',
-                      writer => '_set_valid_args',
-                      reader => '_get_valid_args',
-                      init_arg => undef,
-                      default => sub { [] },
-                    );
+has 'valid_args' => (
+    is => 'ro',
+    isa => 'ArrayRef[Str]',
+    writer => '_set_valid_args',
+    reader => '_get_valid_args',
+    init_arg => undef,
+    default => sub { [] },
+);
 
 #an array of the invalid switches passed to the script                    
-has 'invalid_args' => ( is => 'ro',
-                        isa => 'ArrayRef[Str]',
-                        writer => '_set_invalid_args',
-                        reader => '_get_invalid_args',
-                        init_arg => undef,
-                        default => sub { [] },
-                    );
+has 'invalid_args' => (
+    is => 'ro',
+    isa => 'ArrayRef[Str]',
+    writer => '_set_invalid_args',
+    reader => '_get_invalid_args',
+    init_arg => undef,
+    default => sub { [] },
+);
 
 #an array of anything that wasn't a switch that was encountered                    
-has 'extra_args' => ( is => 'ro',
-                      isa => 'ArrayRef[Str]',
-                      writer => '_set_extra_args',
-                      reader => '_get_extra_args',
-                      init_arg => undef,
-                      default => sub { [] },
-                    );
+has 'extra_args' => (
+    is => 'ro',
+    isa => 'ArrayRef[Str]',
+    writer => '_set_extra_args',
+    reader => '_get_extra_args',
+    init_arg => undef,
+    default => sub { [] },
+);
+                    
+#error message, for reporting more info about errors
+has 'error' => (
+    is => 'ro',
+    isa => 'Str',
+    writer => '_set_error',
+    init_arg => undef,
+    default => '',    
+);
 
 =head1 NAME
 
@@ -101,7 +118,10 @@ Getopt::Flex - Option parsing, done differently
   };
   
   my $op = Getopt::Flex->new({spec => $spec, config => $cfg});
-  $op->getopts();
+  if(!$op->getopts()) {
+      print "**ERROR**: ", $op->error();
+      print $op->get_help();
+  }
 
 =head1 DESCRIPTION
 
@@ -132,6 +152,29 @@ line:
 
 In the default configuration, bundling is not enabled, long options
 must start with "--" and non-options may be placed between options.
+
+Then, create a configuration, if necassary, like so:
+
+  my $cfg = { 'non_option_mode' => 'STOP' };
+
+For more informatin about configuration, see L<Specifying a configuration>.
+Then, create a specification, like so: 
+
+  my $spec = {
+      'foo|f' => {'var' => \$foo, 'type' => 'Str'},
+  };
+
+For more information about specifications, see L<Specifying options>. Create
+a new Getopt::Flex object:
+
+  my $op = Getopt::Flex->new({spec => $spec, config => $cfg});
+
+And finally invoke the option processor with:
+
+  $op->getopts();
+
+In the event of an error, C<getopts()> will return false,
+and set an error message which can be retrieved via C<error>.
 
 =head2 Specifying Options
 
@@ -439,15 +482,24 @@ sub getopts {
                 #peek forward in args, because we didn't find the
                 #necessary value with the switch
                 if($i+1 <= $#args && !$self->_is_switch($args[$i+1])) {
-                    $self->_spec()->set_switch($ret, $args[$i+1]);
-                    push(@valid_args, $ret);
-                    ++$i;
+                    if($self->_spec()->set_switch($ret, $args[$i+1])) {
+                        push(@valid_args, $ret);
+                        ++$i;
+                    } else {
+                        $self->_set_error($self->_spec()->get_switch_error($ret));
+                        return 0;
+                    }
                 } else {
-                    Carp::confess "switch $ret requires value, but none given\n";
+                    $self->_set_error("switch $ret requires value, but none given\n");
+                    return 0;
                 }
             } else { #doesn't require a value, so just use 1
-                $self->_spec()->set_switch($ret, 1);
-                push(@valid_args, $ret);
+                if($self->_spec()->set_switch($ret, 1)) {
+                    push(@valid_args, $ret);
+                } else {
+                    $self->_set_error($self->_spec()->get_switch_error($ret));
+                    return 0;
+                }
             }
         #handle hash returns
         } elsif(ref($ret) eq 'HASH') {
@@ -462,35 +514,50 @@ sub getopts {
                 }
                 
                 if(defined($rh{$key})) {
-                    $self->_spec()->set_switch($key, $rh{$key});
-                    push(@valid_args, $key);
-                    next BUNDLED;
+                    if($self->_spec()->set_switch($key, $rh{$key})) {
+                        push(@valid_args, $key);
+                        next BUNDLED;
+                    } else {
+                        $self->_set_error($self->_spec()->get_switch_error($key));
+                        return 0;
+                    }
                 }
                 
                 if(!$self->_spec()->switch_requires_val($key)) {
-                    $self->_spec()->set_switch($key, 1);
-                    push(@valid_args, $key);
-                    next BUNDLED;
+                    if($self->_spec()->set_switch($key, 1)) {
+                        push(@valid_args, $key);
+                        next BUNDLED;
+                    } else {
+                        $self->_set_error($self->_spec()->get_switch_error($key));
+                        return 0;
+                    }
                 }
                 
                 if($key ne $rh{'~~last'}) {
                     #FFFUUUU
-                    Carp::confess "switch $key requires value, but none given\n";
+                    $self->_set_error("switch $key requires value, but none given\n");
+                    return 0;
                 }
                 
                 if($self->_is_switch($args[$i+1])) {
-                    Carp::confess "switch $key requires value, but none given\n";
+                    self->_set_error("switch $key requires value, but none given\n");
+                    return 0;
                 }
                 
                 #okay, peek
-                $self->_spec()->set_switch($key, $args[$i+1]);
-                push(@valid_args, $key);
-                ++$i;
+                if($self->_spec()->set_switch($key, $args[$i+1])) {
+                    push(@valid_args, $key);
+                    ++$i;
+                } else {
+                    $self->_set_error($self->_spec()->get_switch_error($key));
+                    return 0;
+                }
             }
         #handle array returns
         } elsif(ref($ret) eq 'ARRAY') {    
             my @arr = @{$ret}; #get the array
             if($#arr != 1) {
+                #this would be an error in the module, not bad user input
                 Carp::confess "array is wrong length, should never happen\n";
             }
             
@@ -499,13 +566,18 @@ sub getopts {
                 last if $self->_config()->non_option_mode() eq 'STOP';
             }
 
-            $self->_spec()->set_switch($arr[0], $arr[1]);
-            push(@valid_args, $arr[0]);
+            if($self->_spec()->set_switch($arr[0], $arr[1])) {
+                push(@valid_args, $arr[0]);
+            } else {
+                $self->_set_error($self->_spec()->get_switch_error($arr[0]));
+                return 0;
+            }
         } elsif(!defined($ret)) {    
             Carp::cluck "found invalid switch $ret\n";
             push(@invalid_args, $item);
         } else { #should never happen
             my $rt = ref($ret);
+            #this would be an error in the module, not bad user input
             Carp::confess "returned val $ret of illegal ref type $rt\n" 
         }
     }
@@ -515,7 +587,8 @@ sub getopts {
     foreach my $alias (keys %{$argmap}) {
         if($argmap->{$alias}->required() && !$argmap->{$alias}->is_set()) {
             my $spec = $argmap->{$alias}->switchspec();
-            Carp::confess "missing required switch with spec $spec\n";
+            $self->_set_error("missing required switch with spec $spec\n");
+            return 0;
         }
     }
     
@@ -523,7 +596,7 @@ sub getopts {
     $self->_set_invalid_args(\@invalid_args);
     $self->_set_extra_args(\@extra_args);
     
-    return;
+    return 1;
 }
 
 sub _is_switch {
@@ -852,6 +925,12 @@ sub get_desc {
     my ($self) = @_;
     return $self->_config()->desc()."\n";
 }
+
+=head2 error
+
+Returns an error message if set, empty string otherwise.
+
+=cut
 
 =begin Pod::Coverage
 

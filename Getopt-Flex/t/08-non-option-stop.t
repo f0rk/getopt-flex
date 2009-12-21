@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 27;
+use Test::More tests => 29;
 use Test::Exception;
 use Getopt::Flex;
 
@@ -50,7 +50,8 @@ is($foo, 12, '-f set with 12');
 $op = Getopt::Flex->new({spec => $sp, config => $cfg});
 @args = qw(cast -f 10 -f 12);
 $op->set_args(\@args);
-dies_ok { $op->getopts() } 'Dies with required switch not supplied';
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->error(), qr/required switch/, 'Failed to parse because missing required argument -f');
 
 $sp = {
     'foo|f' => {
@@ -119,7 +120,8 @@ $foo = 0;
 $op = Getopt::Flex->new({spec => $sp, config => $cfg});
 @args = qw(-f 10 -foo);
 $op->set_args(\@args);
-dies_ok { $op->getopts() } 'Dies with supplied value does not pass type constraint';
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $foo = 0;
 $op = Getopt::Flex->new({spec => $sp, config => $cfg});
