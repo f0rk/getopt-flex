@@ -101,6 +101,14 @@ sub switch_requires_val {
     return $self->_argmap()->{$switch}->requires_val();
 }
 
+sub get_switch_error {
+    my ($self, $switch) = @_;
+    
+    Carp::confess "No such switch $switch\n" if !$self->check_switch($switch);
+    
+    return $self->_argmap()->{$switch}->error();
+}
+
 =begin Pod::Coverage
 
   BUILD

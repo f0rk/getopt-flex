@@ -106,6 +106,14 @@ has '_set' => (
     init_arg => undef,
     predicate => 'is_set',
 );
+
+#for indicating error conditions
+has 'error' => (
+    is => 'ro',
+    isa => 'Str',
+    init_arg => undef,
+    writer => '_set_error',
+);
             
             
 =head1 NAME
@@ -275,11 +283,11 @@ sub set_value {
     #handle different types
     my $var = $self->var;
     if($self->type =~ /ArrayRef/) {
-        $self->_check_val($type, $val);
+        return 0 if !$self->_check_val($type, $val);
         push(@$var, $val);
     } elsif($self->type =~ /HashRef/) {
         my @kv = split(/=/, $val);
-        $self->_check_val($type, $kv[1]);
+        return 0 if !$self->_check_val($type, $kv[1]);
         $var->{$kv[0]} = $kv[1];
         $val = $kv[1];
     } elsif($self->type eq 'Inc') {
@@ -287,7 +295,7 @@ sub set_value {
     } elsif($self->type eq 'Bool') {
         $$var = 1;
     } else {
-        $self->_check_val($type, $val);
+        return 0 if !$self->_check_val($type, $val);
         $$var = $val;
     }
     $self->_set(1); #var has been set
@@ -296,21 +304,27 @@ sub set_value {
         my $fn = $self->callback;
         &$fn($val);
     }
+    
+    return 1;
 }
 
 sub _check_val {
     my ($self, $type, $val) = @_;
     
     if(!Moose::Util::TypeConstraints::find_type_constraint($type)->check($val)) {
-        Carp::confess "Invalid value $val does not conform to type constraint $type\n";
+        $self->_set_error("Invalid value $val does not conform to type constraint $type\n");
+        return 0;
     }
     
     if(defined($self->validator)) {
         my $fn = $self->validator;
         if(!&$fn($val)) {
-            Carp::confess "Invalid value $val fails supplied validation check\n";
+            $self->_set_error("Invalid value $val fails supplied validation check\n");
+            return 0;
         }
     }
+    
+    return 1;
 }
 
 =head2 requires_val
