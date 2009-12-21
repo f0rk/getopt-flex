@@ -107,11 +107,17 @@ Getopt::Flex - Option parsing, done differently
 
 Getopt::Flex is an object-oriented way to go about option parsing.
 Creating an option specification is easy and declarative, and
-configuration is optional and defualts to a few, smart parameters.
+configuration is optional and defaults to a few, smart parameters.
 Generally, it adheres to the POSIX syntax with GNU extensions for
 command line options. As a result, options may be longer than a
 single letter, and would begin with "--". Support also exists
 for bundling of command line options, but is not enabled by defualt.
+
+Getopt::Flex is an alternative to other modules in the Getopt::
+namespace, including the much used L<Getopt::Long> and
+L<Getopt::Long::Descriptive>. Other options include L<App::Cmd>
+and L<MooseX::Getopt>. If you don't like this solution,
+try one of those.
 
 =head1 Getting started with Getopt::Flex
 
@@ -146,6 +152,11 @@ the type that the input must conform to. Both I<var> and I<type> are required
 when specifying an option. In general, options must conform to the following:
 
   $_ =~ m/^[a-zA-Z0-9|_?-]+$/ && $_ !~ m/\|\|/ && $_ !~ /--/ && $_ !~ /-$/
+
+Which (in plain english) means that you can use any letter A through Z, upper- or lower-case,
+any number, underscores, dashes, and question marks. The pipe symbol is used to separate the
+various aliases for the switch, and must not appear together (which would produce an empty
+switch). No switch may contain two consecutive dashes, and must not end with a dash.
 
 The following is an example of all possible arguments to an option specification:
 
@@ -390,117 +401,112 @@ sub getopts {
     my @invalid_args = ();
     my @extra_args = ();
     
-    for(my $i = 0; $i <= $#args; ++$i) {
+    PROCESS: for(my $i = 0; $i <= $#args; ++$i) {
         my $item = $args[$i];
         
         #stop processing immediately
-        if($item =~ /^--$/) {
-            last;
+        last if $item =~ /^--$/;
+        
+        #not a switch, so an extra argument
+        if(!$self->_is_switch($item)) {
+            push(@extra_args, $item);
+            last if $self->_config()->non_option_mode() eq 'STOP';
+            next;
         }
         
-        #do we have a switch?
-        if($self->_is_switch($item)) {
-            #if we have a switch, parse it and return any values we encounter
-            #there are a few ways that values are returned: as scalars, when
-            #the accompanying value was not present in the switch passed (i.e.
-            #the form "-f bar" was encountered and not "-fbar" or "-f=bar").
-            #If an array is returned, the value accompanying the switch was
-            #found with it, and $arr[0] contains the switch name and $arr[1]
-            #contains the value found. If a hash is returned, it was a bundled
-            #switch, and the keys are switch names and the values are those
-            #values (if any) that were found.
-            my $ret = $self->_parse_switch($item);
+        #if we have a switch, parse it and return any values we encounter
+        #there are a few ways that values are returned: as scalars, when
+        #the accompanying value was not present in the switch passed (i.e.
+        #the form "-f bar" was encountered and not "-fbar" or "-f=bar").
+        #If an array is returned, the value accompanying the switch was
+        #found with it, and $arr[0] contains the switch name and $arr[1]
+        #contains the value found. If a hash is returned, it was a bundled
+        #switch, and the keys are switch names and the values are those
+        #values (if any) that were found.
+        my $ret = $self->_parse_switch($item);
+        
+        #handle scalar returns
+        if(ref($ret) eq 'SCALAR') {
+            $ret = $$ret; #get our var
             
-            #handle scalar returns
-            if(ref($ret) eq 'SCALAR') {
-                $ret = $$ret; #get our var
-                if($self->_spec()->check_switch($ret)) { #valid switch?
-                    if($self->_spec()->switch_requires_val($ret)) { #requires a value?
-                        #peek forward in args, because we didn't find the
-                        #necessary value with the switch
-                        if($i+1 <= $#args && !$self->_is_switch($args[$i+1])) {
-                            $self->_spec()->set_switch($ret, $args[$i+1]);
-                            push(@valid_args, $ret);
-                            ++$i;
-                        } else {
-                            Carp::confess "switch $ret requires value, but none given\n";
-                        }
-                    } else { #doesn't require a value, so just use 1
-                        $self->_spec()->set_switch($ret, 1);
-                        push(@valid_args, $ret);
-                    }
-                } else { #switch isn't valid
-                    push(@invalid_args, $ret);
-                    if($self->_config()->non_option_mode() eq 'STOP') {
-                        last;
-                    }
-                }
-            #handle hash returns
-            } elsif(ref($ret) eq 'HASH') {
-                my %rh = %{$ret}; #get the hash
-                foreach my $key (keys %rh) {
-                    if($self->_spec()->check_switch($key)) { #one of our switches?
-                        if(!defined($rh{$key})) {
-                            #no value supplied, check if it needs one
-                            if($self->_spec()->switch_requires_val($key)) {
-                                #to peek or not to peek
-                                if($key eq $rh{'~~last'}) { #ok, peek
-                                    if(!$self->_is_switch($args[$i+1])) {
-                                        $self->_spec()->set_switch($key, $args[$i+1]);
-                                        push(@valid_args, $key);
-                                        ++$i;
-                                    } else {
-                                        Carp::confess "switch $key requires value, but none given\n";
-                                    }
-                                } else {
-                                    #FFFUUUU
-                                    Carp::confess "switch $key requires value, but none given\n";
-                                }
-                            } else { #no value needed, just use 1
-                                $self->_spec()->set_switch($key, 1);
-                                push(@valid_args, $key);
-                            }
-                        } else { #value supplied, use it
-                            $self->_spec()->set_switch($key, $rh{$key});
-                            push(@valid_args, $key);
-                        }
-                    } else {
-                        #no such switch
-                        if($key ne '~~last') {
-                            push(@invalid_args, $key);
-                            if($self->_config()->non_option_mode() eq 'STOP') {
-                                last;
-                            }
-                        }
-                    }
-                }
-            #handle array returns
-            } elsif(ref($ret) eq 'ARRAY') {    
-                my @arr = @{$ret}; #get the array
-                if($#arr != 1) {
-                    Carp::confess "array is wrong length, should never happen\n";
+            if(!$self->_spec()->check_switch($ret)) {
+                push(@invalid_args, $ret);
+                last if $self->_config()->non_option_mode() eq 'STOP';
+                next;
+            }
+            
+            if($self->_spec()->switch_requires_val($ret)) { #requires a value?
+                #peek forward in args, because we didn't find the
+                #necessary value with the switch
+                if($i+1 <= $#args && !$self->_is_switch($args[$i+1])) {
+                    $self->_spec()->set_switch($ret, $args[$i+1]);
+                    push(@valid_args, $ret);
+                    ++$i;
                 } else {
-                    if($self->_spec()->check_switch($arr[0])) { #one of ours?
-                        $self->_spec()->set_switch($arr[0], $arr[1]);
-                        push(@valid_args, $arr[0]);
-                    } else { #nope
-                        push(@invalid_args, $arr[0]);
-                        if($self->_config()->non_option_mode() eq 'STOP') {
-                            last;
-                        }
-                    }
+                    Carp::confess "switch $ret requires value, but none given\n";
                 }
-            } elsif(!defined($ret)) {    
-                Carp::cluck "found invalid switch $ret\n";
-            } else { #should never happen
-                my $rt = ref($ret);
-                Carp::confess "returned val $ret of illegal ref type $rt\n" 
+            } else { #doesn't require a value, so just use 1
+                $self->_spec()->set_switch($ret, 1);
+                push(@valid_args, $ret);
             }
-        } else { #not a switch, so an extra argument
-            push(@extra_args, $item);
-            if($self->_config()->non_option_mode() eq 'STOP') {
-                last;
+        #handle hash returns
+        } elsif(ref($ret) eq 'HASH') {
+            my %rh = %{$ret}; #get the hash
+            BUNDLED: foreach my $key (keys %rh) {
+                if(!$self->_spec()->check_switch($key)) {
+                    if($key ne '~~last') {
+                        push(@invalid_args, $key);
+                        last PROCESS if $self->_config()->non_option_mode() eq 'STOP';
+                    }
+                    next BUNDLED;
+                }
+                
+                if(defined($rh{$key})) {
+                    $self->_spec()->set_switch($key, $rh{$key});
+                    push(@valid_args, $key);
+                    next BUNDLED;
+                }
+                
+                if(!$self->_spec()->switch_requires_val($key)) {
+                    $self->_spec()->set_switch($key, 1);
+                    push(@valid_args, $key);
+                    next BUNDLED;
+                }
+                
+                if($key ne $rh{'~~last'}) {
+                    #FFFUUUU
+                    Carp::confess "switch $key requires value, but none given\n";
+                }
+                
+                if($self->_is_switch($args[$i+1])) {
+                    Carp::confess "switch $key requires value, but none given\n";
+                }
+                
+                #okay, peek
+                $self->_spec()->set_switch($key, $args[$i+1]);
+                push(@valid_args, $key);
+                ++$i;
             }
+        #handle array returns
+        } elsif(ref($ret) eq 'ARRAY') {    
+            my @arr = @{$ret}; #get the array
+            if($#arr != 1) {
+                Carp::confess "array is wrong length, should never happen\n";
+            }
+            
+            if(!$self->_spec()->check_switch($arr[0])) {
+                push(@invalid_args, $arr[0]);
+                last if $self->_config()->non_option_mode() eq 'STOP';
+            }
+
+            $self->_spec()->set_switch($arr[0], $arr[1]);
+            push(@valid_args, $arr[0]);
+        } elsif(!defined($ret)) {    
+            Carp::cluck "found invalid switch $ret\n";
+            push(@invalid_args, $item);
+        } else { #should never happen
+            my $rt = ref($ret);
+            Carp::confess "returned val $ret of illegal ref type $rt\n" 
         }
     }
     
@@ -559,40 +565,46 @@ sub _switch_type {
     #long switch
     if($switch =~ /^--/) {
         return $_ST_LONG;
-    } else { #could be any kind
-        #single dash, single letter, definitely short
-        if($switch =~ /^-[a-zA-Z0-9?]$/) {
-            return $_ST_SHORT;
-        #single dash, single letter, equal sign, definitely short
-        } elsif($switch =~ /^-[a-zA-Z0-9?]=.+$/) {
-            return $_ST_SHORT;
-        #short or bundled
-        } else {
-            #already determined it isn't a single letter switch, so check
-            #the non_option_mode to see if it is long
-            if($self->_config()->long_option_mode() eq 'SINGLE_OR_DOUBLE') {
-                return $_ST_LONG;
-            #could be short, bundled, or none
-            } else {
-                $switch =~ s/^-//;
-                my $c1 = substr($switch, 0, 1);
-                my $c2 = substr($switch, 1, 1);
-                #the first letter doesn't belong to a short switch
-                #so this isn't a valid switch
-                if(!$self->_spec()->check_switch($c1)) {
-                    return $_ST_NONE;
-                #first letter belongs to a switch, but not the second
-                #so this is a short switch of the form "-fboo" where
-                #-f is the switch
-                } elsif($self->_spec()->check_switch($c1) && !$self->_spec()->check_switch($c2)) {
-                    return $_ST_SHORT;
-                #no other choices, it's bundled
-                } else {
-                    return $_ST_BUNDLED;
-                }
-            }
-        }
     }
+    
+    #could be any kind
+    #single dash, single letter, definitely short
+    if($switch =~ /^-[a-zA-Z0-9?]$/) {
+        return $_ST_SHORT;
+    }
+    
+    #single dash, single letter, equal sign, definitely short
+    if($switch =~ /^-[a-zA-Z0-9?]=.+$/) {
+        return $_ST_SHORT;
+    }
+    
+    #short or bundled
+    #already determined it isn't a single letter switch, so check
+    #the non_option_mode to see if it is long
+    if($self->_config()->long_option_mode() eq 'SINGLE_OR_DOUBLE') {
+        return $_ST_LONG;
+    }
+    
+    #could be short, bundled, or none
+    $switch =~ s/^-//;
+    my $c1 = substr($switch, 0, 1);
+    my $c2 = substr($switch, 1, 1);
+    
+    #the first letter doesn't belong to a short switch
+    #so this isn't a valid switch
+    if(!$self->_spec()->check_switch($c1)) {
+        return $_ST_NONE;
+    }
+    
+    #first letter belongs to a switch, but not the second
+    #so this is a short switch of the form "-fboo" where
+    #-f is the switch
+    if($self->_spec()->check_switch($c1) && !$self->_spec()->check_switch($c2)) {
+        return $_ST_SHORT;
+    }
+        
+    #no other choices, it's bundled
+    return $_ST_BUNDLED;
 }
 
 sub _parse_long_switch {
@@ -634,33 +646,38 @@ sub _parse_bundled_switch {
     my $last_switch;
     for(my $i = 0; $i < length($switch); ++$i) {
         my $c = substr($switch, $i, 1);
+        
+        
         if($c eq any(keys %rh)) {
-            #switch appears again in bundle, rest of string is an argument to last switch
-            if(defined($last_switch)) {
-                $rh{$last_switch} = substr($switch, $i);
-            } else { #oops, illegal switch
+            if(!defined($last_switch)) {
+                #oops, illegal switch
                 #should never get here, make sure switch
                 #is valid and of correct type sooner
                 Carp::confess "illegal switch $switch\n";
             }
-            $i = length($switch);
+            
+            #switch appears again in bundle, rest of string is an argument to last switch
+            $rh{$last_switch} = substr($switch, $i);
+            last;
         } elsif($self->_spec()->check_switch($c)) {
             $rh{$c} = undef;
+            $last_switch = $c;
+            next;
         } else { #rest of the string was an argument to last switch
-            if(defined($last_switch)) {
-                if($c eq '=') {
-                    $rh{$last_switch} = substr($switch, $i + 1);
-                } else {
-                    $rh{$last_switch} = substr($switch, $i);
-                }
-            } else { #oops, illegal switch
+            if(!defined($last_switch)) {
+                #oops, illegal switch
                 #should never get here, make sure switch
                 #is valid and of correct type sooner
                 Carp::confess "illegal switch $switch\n";
-            } 
-            $i = length($switch);
+            }
+        
+            if($c eq '=') {
+                $rh{$last_switch} = substr($switch, $i + 1);
+            } else {
+                $rh{$last_switch} = substr($switch, $i);
+            }
+            last;
         }
-        $last_switch = $c;
     }
     
     #special value so we can pass on
