@@ -101,6 +101,12 @@ sub switch_requires_val {
     return $self->_argmap()->{$switch}->requires_val();
 }
 
+=head2 get_switch_error
+
+Given a switch return any associated error message.
+
+=cut
+
 sub get_switch_error {
     my ($self, $switch) = @_;
     
