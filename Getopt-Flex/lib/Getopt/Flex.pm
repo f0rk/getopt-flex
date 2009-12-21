@@ -54,7 +54,6 @@ has '_args' => (
     is => 'rw',
     isa => 'ArrayRef',
     init_arg => undef,
-    default => sub { my @a = Clone::clone(@ARGV); return \@a },
 ); 
 
 #an array of the valid switches passed to the script               
@@ -419,6 +418,9 @@ An automatically generated help message would look like this:
 
 sub BUILD {
     my $self = shift;
+    
+    #set args from argv
+    $self->_args(Clone::clone(\@ARGV));
     
     #create the configuration
     $self->_config(Getopt::Flex::Config->new($self->config()));
