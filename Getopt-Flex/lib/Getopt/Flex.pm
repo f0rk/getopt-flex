@@ -121,7 +121,7 @@ Getopt::Flex - Option parsing, done differently
   if(!$op->getopts()) {
       print "**ERROR**: ", $op->get_error();
       print $op->get_help();
-      exit(0);
+      exit(1);
   }
 
 =head1 DESCRIPTION
@@ -340,11 +340,18 @@ What follows is a discussion of each option.
 I<non_option_mode> tells the parser what to do when it encounters anything
 which is not a valid option to the program. Possible values are as follows:
 
-  STOP IGNORE
+  STOP IGNORE SWITCH_RET_0 VALUE_RET_0 STOP_RET_0
 
 C<STOP> indicates that upon encountering something that isn't an option, stop
 processing immediately. C<IGNORE> is the opposite, ignoring everything that
-isn't an option. The default value is C<IGNORE>.
+isn't an option. The default value is C<IGNORE>. The values ending in C<_RET_0>
+indicate that the program should return immediately (with value 0 for false)
+to indicate that there was a processing error. C<SWITCH_RET_0> means that false
+should be returned in the event an illegal switch is encountered. C<VALUE_RET_0>
+means that upon encountering a value, the program should return immediately with
+false. This would be useful if your program expects no other input other than
+option switches. C<STOP_RET_0> means that if an illegal switch or any value is
+encountered that false should be returned immediately.
 
 =head2 Configuring bundling
 
@@ -359,6 +366,11 @@ Where equivalent unbundled representation is:
 
 By turning I<bundling> on, I<long_option_mode> will automatically be set to
 C<REQUIRE_DOUBLE_DASH>.
+
+Warning: If you pass an illegal switch into a bundle, it may happen that the
+entire bundle is treated as invalid, or at least several of its switches.
+For this reason, it is recommended that you set I<non_option_mode> to
+C<SWITCH_RET_0> when bundling is turned on.
 
 =head2 Configuring long_option_mode
 
@@ -477,6 +489,8 @@ sub getopts {
     my @invalid_args = ();
     my @extra_args = ();
     
+    my $non_opt_mode = $self->_config()->non_option_mode();
+    
     PROCESS: for(my $i = 0; $i <= $#args; ++$i) {
         my $item = $args[$i];
         
@@ -486,7 +500,17 @@ sub getopts {
         #not a switch, so an extra argument
         if(!$self->_is_switch($item)) {
             push(@extra_args, $item);
-            last if $self->_config()->non_option_mode() eq 'STOP';
+            
+            if($non_opt_mode eq 'STOP_RET_0') {
+                $self->_set_error("Encountered illegal item $item");
+                return 0;
+            } elsif($non_opt_mode eq 'STOP') {
+                last;
+            } elsif($non_opt_mode eq 'VALUE_RET_0') {
+                $self->_set_error("Encountered illegal value $item");
+                return 0;
+            }
+
             next;
         }
         
@@ -507,7 +531,15 @@ sub getopts {
             
             if(!$self->_spec()->check_switch($ret)) {
                 push(@invalid_args, $ret);
-                last if $self->_config()->non_option_mode() eq 'STOP';
+                if($non_opt_mode eq 'STOP_RET_0') {
+                    $self->_set_error("Encountered illegal switch $ret");
+                    return 0;
+                } elsif($non_opt_mode eq 'STOP') {
+                    last;
+                } elsif($non_opt_mode eq 'SWITCH_RET_0') {
+                    $self->_set_error("Encountered illegal switch $ret");
+                    return 0;
+                }
                 next;
             }
             
@@ -541,7 +573,15 @@ sub getopts {
                 if(!$self->_spec()->check_switch($key)) {
                     if($key ne '~~last') {
                         push(@invalid_args, $key);
-                        last PROCESS if $self->_config()->non_option_mode() eq 'STOP';
+                        if($non_opt_mode eq 'STOP_RET_0') {
+                            $self->_set_error("Encountered illegal switch $key");
+                            return 0;
+                        } elsif($non_opt_mode eq 'STOP') {
+                            last PROCESS;
+                        } elsif($non_opt_mode eq 'SWITCH_RET_0') {
+                            $self->_set_error("Encountered illegal switch $key");
+                            return 0;
+                        }
                     }
                     next BUNDLED;
                 }
@@ -596,7 +636,15 @@ sub getopts {
             
             if(!$self->_spec()->check_switch($arr[0])) {
                 push(@invalid_args, $arr[0]);
-                last if $self->_config()->non_option_mode() eq 'STOP';
+                if($non_opt_mode eq 'STOP_RET_0') {
+                    $self->_set_error("Encountered illegal switch $arr[0]");
+                    return 0;
+                } elsif($non_opt_mode eq 'STOP') {
+                    last;
+                } elsif($non_opt_mode eq 'SWITCH_RET_0') {
+                    $self->_set_error("Encountered illegal switch $arr[0]");
+                    return 0;
+                }
             }
 
             if($self->_spec()->set_switch($arr[0], $arr[1])) {
@@ -606,8 +654,16 @@ sub getopts {
                 return 0;
             }
         } elsif(!defined($ret)) {    
-            Carp::cluck "found invalid switch $ret\n";
             push(@invalid_args, $item);
+            if($non_opt_mode eq 'STOP_RET_0') {
+                $self->_set_error("Encountered illegal switch $item");
+                return 0;
+            } elsif($non_opt_mode eq 'STOP') {
+                last;
+            } elsif($non_opt_mode eq 'SWITCH_RET_0') {
+                $self->_set_error("Encountered illegal switch $item");
+                return 0;
+            }
         } else { #should never happen
             my $rt = ref($ret);
             #this would be an error in the module, not bad user input

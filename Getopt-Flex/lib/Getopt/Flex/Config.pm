@@ -7,7 +7,7 @@ use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
 #valid non_option_mode arguments
-enum 'NonOptionMode' => qw(IGNORE STOP);
+enum 'NonOptionMode' => qw(IGNORE SWITCH_RET_0 VALUE_RET_0 STOP_RET_0 STOP);
  
 #valid long_option_mode arguments           
 enum 'LongOptionMode' => qw(REQUIRE_DOUBLE_DASH SINGLE_OR_DOUBLE);

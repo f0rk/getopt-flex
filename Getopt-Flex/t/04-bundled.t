@@ -71,3 +71,16 @@ $op->getopts();
 ok($foo, '-f set to true');
 ok($bar, '-b set to true');
 is($cab, 'foo', '-c set to foo');
+
+my $cfg = {
+    'non_option_mode' => 'SWITCH_RET_0',
+};
+
+$foo = 0;
+$bar = 0;
+$cab = 0;
+$op = Getopt::Flex->new({spec => $sp, config => $cfg});
+@args = qw(-Fc foo -b);
+$op->set_args(\@args);
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->get_error(), qr/illegal switch/, 'Found illegal switch');

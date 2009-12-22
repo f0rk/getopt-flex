@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 146;
+use Test::More tests => 149;
 use Getopt::Flex;
 
 my $foo;
@@ -589,3 +589,21 @@ is($keys[2], 'cc', 'has key cc');
 is($has{'aa'}, -11, 'key aa has val -11');
 is($has{'bb'}, 2, 'key bb has val 2');
 is($has{'cc'}, -3, 'key cc has val -3');
+
+$sp = {
+    'foo|f' => {
+        'var' => \$foo,
+        'type' => 'Str',
+    }
+};
+
+$foo = 0;
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-F);
+ok($op->getopts(), 'Parses ok');
+
+$foo = 0;
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-F=1);
+ok($op->getopts(), 'Parses ok');
+is($foo, 0, '-f not set');

@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 101;
+use Test::More tests => 104;
 use Getopt::Flex;
 
 my $foo;
@@ -446,3 +446,21 @@ $op = Getopt::Flex->new({spec => $sp});
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
 like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+
+$sp = {
+    'foo|f' => {
+        'var' => \$foo,
+        'type' => 'Str',
+    }
+};
+
+$foo = 0;
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(--FOO);
+ok($op->getopts(), 'Parses ok');
+
+$foo = 0;
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(--FOO=1);
+ok($op->getopts(), 'Parses ok');
+is($foo, 0, '--foo not set');
