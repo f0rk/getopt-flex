@@ -5,11 +5,14 @@ package Getopt::Flex::Spec::Argument;
 use Carp;
 use Moose;
 use Moose::Util::TypeConstraints;
+use Moose::Meta::TypeConstraint;
 use MooseX::StrictConstructor;
 use Perl6::Junction qw(any none);
 
 #types an argument know how to be
-enum 'ValidType' => qw(Bool Str Num Int ArrayRef[Str] ArrayRef[Num] ArrayRef[Int] HashRef[Str] HashRef[Num] HashRef[Int] Inc);
+subtype 'ValidType'
+            => as 'Str'
+            => where { $_ =~ m/^[a-zA-Z]+$|^ArrayRef\[[a-zA-Z]+\]$|^HashRef\[[a-zA-Z]+\]$/ };
 
 #special type for an incremental argument
 subtype 'Inc'
@@ -18,12 +21,12 @@ subtype 'Inc'
 #special type defining what a switch spec should look like            
 subtype 'SwitchSpec'
             => as 'Str'
-            => where { $_ =~ m/^[a-zA-Z0-9|_?-]+$/ && $_ !~ m/\|\|/ && $_ !~ /--/ && $_ !~ /-$/ };
+            => where { $_ =~ m/^[a-zA-Z0-9|_?-]+$/ && $_ =~ m/^[a-zA-Z_?]/ && $_ !~ m/\|\|/ && $_ !~ /--/ && $_ !~ /-$/ };
 
-#special type defining what a parsed  switch should look like          
+#special type defining what a parsed switch should look like          
 subtype 'Switch'
             => as 'Str'
-            => where { $_ =~ m/^[a-zA-Z0-9_?-]+$/ };
+            => where { $_ =~ m/^[a-zA-Z0-9_?-]+$/ && $_ =~ m/^[a-zA-Z_?]/ };
 
 #the argument specification supplied
 has 'switchspec' => (
@@ -132,6 +135,26 @@ and should not be used directly.
 sub BUILD {
     my ($self) = @_;
     
+    #check the type supplied
+    if(!Moose::Util::TypeConstraints::find_or_parse_type_constraint($self->type())) {
+        my $type = $self->type();
+        Carp::confess "Type constraint $type does not exist or cannot be created\n";
+    }
+    
+    #check that the type supplied is a "simple" type or that the parameterizable
+    #type supplied has a parameter which is also simple
+    my $type = $self->type();
+    if($type =~ m/^([a-zA-Z]+)\[([a-zA-Z]+)\]$/) {
+        $type = $2;
+    }
+    my $tc = Moose::Util::TypeConstraints::find_or_parse_type_constraint($type);
+    if(!$tc->is_a_type_of('Str')
+    && !$tc->is_a_type_of('Int')
+    && !$tc->is_a_type_of('Num')
+    && !$tc->is_a_type_of('Bool')) {
+        Carp::confess "Given type (or parameter) $type is not simple, i.e. it must be a subtype of Str, Num, Int, or Bool\n";
+    }
+    
     #check supplied reference type
     my $reft = ref($self->var());
     if($reft eq none(qw(ARRAY HASH SCALAR))) {
@@ -209,7 +232,11 @@ sub BUILD {
     if($self->desc() ne '') {
         my @use = ();
         foreach my $al (sort @{$self->aliases()}) {
-            if(length($al) < 22) { push(@use, $al) } #not too long
+            if(length($al) < 22) { #not too long
+                push(@use, $al)
+            } else {
+                Carp::cluck "Alias $al too long for documentation and is being ignored\n";
+            }
         }
         
         #all the options were too long, probably should die or issue a warning

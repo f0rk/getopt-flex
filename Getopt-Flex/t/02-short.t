@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 117;
+use Test::More tests => 146;
 use Getopt::Flex;
 
 my $foo;
@@ -95,13 +95,13 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/requires value/, 'Failed to parse because -f missing required value');
+like($op->get_error(), qr/requires value/, 'Failed to parse because -f missing required value');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw();
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/required switch/, 'Failed to parse because missing required argument -f');
+like($op->get_error(), qr/required switch/, 'Failed to parse because missing required argument -f');
 
 #checking int values
 $sp = {
@@ -133,37 +133,37 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 2e2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f2e2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=2e2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 2.2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f2.2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=2.2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 #test out bool
 $sp = {
@@ -256,19 +256,19 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f aaa);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=aaa);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-faaa);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 #try incremental
 $sp = {
@@ -352,7 +352,7 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 1 -f bar);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $sp = {
     'foo|f' => {
@@ -363,12 +363,13 @@ $sp = {
 
 @arr = ();
 $op = Getopt::Flex->new({spec => $sp});
-@args = qw(-f 1 -f 2);
+@args = qw(-f 1 -f 2 -f 3);
 $op->set_args(\@args);
 $op->getopts();
-is($#arr, 1, '-f set with 2 values');
+is($#arr, 2, '-f set with 3 values');
 is($arr[0], 1, 'arr has 0th elem 1');
 is($arr[1], 2, 'arr has 1st elem 2');
+is($arr[2], 3, 'arr has 2nd elem 3');
 
 @arr = ();
 $op = Getopt::Flex->new({spec => $sp});
@@ -384,7 +385,7 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 1 -f bar);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 #try out hashes
 $sp = {
@@ -448,14 +449,14 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f aa=1 -f bb=bar -f cc=3);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 %has = ();
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f aa=1 -f bb=2.2 -f cc=3);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $sp = {
     'foo|f' => {
@@ -497,4 +498,94 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f aa=1 -f bb=bar -f cc=3);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+
+$sp = {
+    'foo|f' => {
+        'var' => \$foo,
+        'type' => 'Int',
+    }
+};
+
+$foo = 0;
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-f -2);
+$op->set_args(\@args);
+$op->getopts();
+ok($op->getopts(), 'Parses ok');
+is($foo, -2, '-f set with -2');
+
+$foo = 0;
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-f=-2);
+$op->set_args(\@args);
+$op->getopts();
+ok($op->getopts(), 'Parses ok');
+is($foo, -2, '-f set with -2');
+
+$foo = 0;
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-f-2);
+$op->set_args(\@args);
+$op->getopts();
+ok($op->getopts(), 'Parses ok');
+is($foo, -2, '-f set with -2');
+
+
+$sp = {
+    'foo|f' => {
+        'var' => \@arr,
+        'type' => 'ArrayRef[Int]',
+    }
+};
+
+@arr = ();
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-f -2 -f 3 -f -10);
+$op->set_args(\@args);
+ok($op->getopts(), 'Parses ok');
+is($#arr, 2, '-f set with 3 values');
+is($arr[0], -2, 'arr has 0th elem -2');
+is($arr[1], 3, 'arr has 1st elem 3');
+is($arr[2], -10, 'arr has 3rd elem -10');
+
+@arr = ();
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-f=-2 -f=3 -f=-10);
+$op->set_args(\@args);
+ok($op->getopts(), 'Parses ok');
+is($#arr, 2, '-f set with 3 values');
+is($arr[0], -2, 'arr has 0th elem -2');
+is($arr[1], 3, 'arr has 1st elem 3');
+is($arr[2], -10, 'arr has 3rd elem -10');
+
+@arr = ();
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-f-2 -f3 -f-10);
+$op->set_args(\@args);
+ok($op->getopts(), 'Parses ok');
+is($#arr, 2, '-f set with 3 values');
+is($arr[0], -2, 'arr has 0th elem -2');
+is($arr[1], 3, 'arr has 1st elem 3');
+is($arr[2], -10, 'arr has 3rd elem -10');
+
+$sp = {
+    'foo|f' => {
+        'var' => \%has,
+        'type' => 'HashRef[Int]',
+    }
+};
+
+%has = ();
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-f aa=-11 -f bb=2 -f cc=-3);
+$op->set_args(\@args);
+$op->getopts();
+@keys = sort keys %has;
+is($#keys, 2, 'has has 3 keys');
+is($keys[0], 'aa', 'has key aa');
+is($keys[1], 'bb', 'has key bb');
+is($keys[2], 'cc', 'has key cc');
+is($has{'aa'}, -11, 'key aa has val -11');
+is($has{'bb'}, 2, 'key bb has val 2');
+is($has{'cc'}, -3, 'key cc has val -3');

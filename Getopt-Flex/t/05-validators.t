@@ -32,13 +32,13 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f bar -b 12);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
+like($op->get_error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f baz -b 1.2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
+like($op->get_error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
 
 $sp = {
     'foo|f' => {
@@ -63,7 +63,7 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 11 -f 9);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
+like($op->get_error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
 
 $sp = {
     'foo|f' => {
@@ -92,4 +92,4 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f aa=11 -f bb=9);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
+like($op->get_error(), qr/supplied validation/, 'Failed to parse because value fails supplied validation check');
