@@ -196,12 +196,13 @@ C<$var> with a value when encountered during processing. I<type> specifies
 the type that the input must conform to. Both I<var> and I<type> are required
 when specifying an option. In general, options must conform to the following:
 
-  $_ =~ m/^[a-zA-Z0-9|_?-]+$/ && $_ !~ m/\|\|/ && $_ !~ /--/ && $_ !~ /-$/
+  $_ =~ m/^[a-zA-Z0-9|_?-]+$/ && $_ =~ m/^[a-zA-Z_?]/ && $_ !~ m/\|\|/ && $_ !~ /--/ && $_ !~ /-$/
 
 Which (in plain english) means that you can use any letter A through Z, upper- or lower-case,
 any number, underscores, dashes, and question marks. The pipe symbol is used to separate the
 various aliases for the switch, and must not appear together (which would produce an empty
-switch). No switch may contain two consecutive dashes, and must not end with a dash.
+switch). No switch may contain two consecutive dashes, and must not end with a dash. A switch
+must also begin with A through Z, upper- or lower-case, an underscore, or a question mark.
 
 The following is an example of all possible arguments to an option specification:
 
@@ -226,18 +227,45 @@ L<Specifying a type> for more information.
 
 =head2 Specifying a type
 
-A valid type is one of the following:
+A valid type is any type that is "simple" or an ArrayRef or HashRef parameterized
+with a simple type. A simple type is one that is a subtype of C<Bool>, C<Str>,
+C<Num>, or C<Int>.
+
+Commonly used types would be the following:
 
   Bool Str Num Int ArrayRef[Str] ArrayRef[Num] ArrayRef[Int] HashRef[Str] HashRef[Num] HashRef[Int] Inc
 
-These work like exactly like Moose type constraints of the same name, except C<Inc>.
-C<Inc> defines an incremental type (actually simply an alias for Moose's C<Int> type),
+The type C<Inc> is an incremental type (actually simply an alias for Moose's C<Int> type),
 whose value will be increased by one each time
 its appropriate switch is encountered on the command line. When using an C<ArrayRef>
 type, the supplied var must be an array reference, like C<\@arr> and NOT C<@arr>.
 Likewise, when using a C<HashRef> type, the supplied var must be a hash reference,
-e.g. C<\%hash> and NOT C<%hash>. For more information about types, see
-L<Moose::Manual::Types>.
+e.g. C<\%hash> and NOT C<%hash>.
+
+You can define your own types as well. For this, you will need to import C<Moose> and
+C<Moose::Util::TypeConstraints>, like so:
+
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+Then, simply use C<subtype> to create a subtype of your liking:
+
+  subtype 'Natural'
+            => as 'Int'
+            => where { $_ > 0 };
+
+This will automatically register the type for you and make it visible to Getopt::Flex.
+As noted above, those types must be a subtype of C<Bool>, C<Str>, C<Num>, or C<Int>.
+Any other types will cause Getopt::Flex to signal an error. You may use these subtypes
+that you define as parameters for the ArrayRef or Hashref parameterizable types, like so:
+
+  my $sp = { 'foo|f' => { 'var' => \@arr, 'type' => 'ArrayRef[Natural]' } };
+
+or
+
+  my $sp = { 'foo|f' => { 'var' => \%has, 'type' => 'HashRef[Natural]' } };
+
+For more information about types and defining your own types, see L<Moose::Manual::Types>.
 
 All of the following arguments to the option specification are optional.
 
@@ -486,7 +514,7 @@ sub getopts {
             if($self->_spec()->switch_requires_val($ret)) { #requires a value?
                 #peek forward in args, because we didn't find the
                 #necessary value with the switch
-                if($i+1 <= $#args && !$self->_is_switch($args[$i+1])) {
+                if(defined($args[$i+1]) && !$self->_is_switch($args[$i+1])) {
                     if($self->_spec()->set_switch($ret, $args[$i+1])) {
                         push(@valid_args, $ret);
                         ++$i;
@@ -612,7 +640,7 @@ sub _is_switch {
     }
     
     #does he look like a switch?
-    return $switch =~ /^(-|--)[a-zA-Z0-9?][a-zA-Z0-9=_?-]*/;
+    return $switch =~ /^(-|--)[a-zA-Z?][a-zA-Z0-9=_?-]*/;
 }
 
 sub _parse_switch {
@@ -647,12 +675,12 @@ sub _switch_type {
     
     #could be any kind
     #single dash, single letter, definitely short
-    if($switch =~ /^-[a-zA-Z0-9?]$/) {
+    if($switch =~ /^-[a-zA-Z?]$/) {
         return $_ST_SHORT;
     }
     
     #single dash, single letter, equal sign, definitely short
-    if($switch =~ /^-[a-zA-Z0-9?]=.+$/) {
+    if($switch =~ /^-[a-zA-Z?]=.+$/) {
         return $_ST_SHORT;
     }
     

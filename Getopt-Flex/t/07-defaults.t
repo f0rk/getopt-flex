@@ -79,7 +79,7 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 3.14);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $foo = 0;
 $op = Getopt::Flex->new({spec => $sp});

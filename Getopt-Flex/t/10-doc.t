@@ -1,6 +1,7 @@
 use strict;
 use warnings;
-use Test::More tests => 15;
+use Test::More tests => 17;
+use Test::Warn;
 use Getopt::Flex;
 
 my $foo;
@@ -97,7 +98,7 @@ Options:
   -f, --foo                     Expects a string naming the foo
 EOH
 
-$op = Getopt::Flex->new({spec => $sp, config => $cfg});
+warning_like { $op = Getopt::Flex->new({spec => $sp, config => $cfg}) } qr/too long for doc/, 'Warned option name too long';
 
 is($op->get_usage(), $usage, 'usage is correct');
 is($op->get_desc(), $desc, 'desc is correct');
@@ -141,7 +142,7 @@ Options:
   -f, --foo                     Expects a string naming the foo
 EOH
 
-$op = Getopt::Flex->new({spec => $sp, config => $cfg});
+warning_like { $op = Getopt::Flex->new({spec => $sp, config => $cfg}) } qr/too long for doc/, 'Warned option name too long';
 
 is($op->get_usage(), $usage, 'usage is correct');
 is($op->get_desc(), $desc, 'desc is correct');

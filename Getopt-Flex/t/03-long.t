@@ -85,13 +85,13 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/requires value/, 'Failed to parse because --foo missing required value');
+like($op->get_error(), qr/requires value/, 'Failed to parse because --foo missing required value');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw();
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/required switch/, 'Failed to parse because missing required argument --foo');
+like($op->get_error(), qr/required switch/, 'Failed to parse because missing required argument --foo');
 
 #checking int values
 $sp = {
@@ -117,25 +117,25 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo 2e2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo=2e2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo 2.2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo=2.2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 #test out bool
 $sp = {
@@ -210,13 +210,13 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo aaa);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo=aaa);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 #try incremental
 $sp = {
@@ -300,7 +300,7 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo 1 --foo bar);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $sp = {
     'foo|f' => {
@@ -332,7 +332,7 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo 1 --foo bar);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 #try out hashes
 $sp = {
@@ -396,14 +396,14 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo aa=1 --foo bb=bar --foo cc=3);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 %has = ();
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo aa=1 --foo bb=2.2 --foo cc=3);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
 $sp = {
     'foo|f' => {
@@ -445,4 +445,4 @@ $op = Getopt::Flex->new({spec => $sp});
 @args = qw(--foo aa=1 --foo bb=bar --foo cc=3);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
-like($op->error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
+like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
