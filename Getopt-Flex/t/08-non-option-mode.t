@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 29;
+use Test::More tests => 52;
 use Test::Exception;
 use Getopt::Flex;
 
@@ -166,3 +166,81 @@ is($has{'aa'}, 'cats', 'key aa set with cats');
 $cfg = {
     'non_option_mode' => 'VALUE_RET_0',
 };
+
+$sp = {
+    'foo|f' => {
+        'var' => \$foo,
+        'type' => 'Str',
+    },
+    'bar|b' => {
+        'var' => \$bar,
+        'type' => 'Str',
+    }
+};
+
+$foo = '';
+$bar = '';
+$op = Getopt::Flex->new({spec => $sp, config => $cfg});
+@args = qw(-f=foo -b=bar cats);
+$op->set_args(\@args);
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->get_error(), qr/illegal value/, 'Encountered illegal value');
+is($foo, 'foo', '-f set with foo');
+is($bar, 'bar', '-b set with bar');
+
+$foo = '';
+$bar = '';
+$op = Getopt::Flex->new({spec => $sp, config => $cfg});
+@args = qw(-f=foo cats -b=bar);
+$op->set_args(\@args);
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->get_error(), qr/illegal value/, 'Encountered illegal value');
+is($foo, 'foo', '-f set with foo');
+is($bar, '', '-b left unset');
+
+$cfg = {
+    'non_option_mode' => 'SWITCH_RET_0',
+};
+
+$foo = '';
+$bar = '';
+$op = Getopt::Flex->new({spec => $sp, config => $cfg});
+@args = qw(-f=foo cats -b=bar);
+$op->set_args(\@args);
+ok($op->getopts(), 'Parses ok');
+is($foo, 'foo', '-f set with foo');
+is($bar, 'bar', '-b set with bar');
+
+$foo = '';
+$bar = '';
+$op = Getopt::Flex->new({spec => $sp, config => $cfg});
+@args = qw(-f=foo --cats -b=bar);
+$op->set_args(\@args);
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->get_error(), qr/illegal switch/, 'Encountered illegal switch');
+is($foo, 'foo', '-f set with foo');
+is($bar, '', '-b left unset');
+
+$cfg = {
+    'non_option_mode' => 'STOP_RET_0',
+};
+
+$foo = '';
+$bar = '';
+$op = Getopt::Flex->new({spec => $sp, config => $cfg});
+@args = qw(-f=foo cats -b=bar);
+$op->set_args(\@args);
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->get_error(), qr/illegal item/, 'Encountered illegal item');
+is($foo, 'foo', '-f set with foo');
+is($bar, '', '-b left unset');
+
+$foo = '';
+$bar = '';
+$op = Getopt::Flex->new({spec => $sp, config => $cfg});
+@args = qw(-f=foo --cats -b=bar);
+$op->set_args(\@args);
+ok(!$op->getopts(), 'Fails in parsing');
+like($op->get_error(), qr/illegal switch/, 'Encountered illegal switch');
+is($foo, 'foo', '-f set with foo');
+is($bar, '', '-b left unset');
