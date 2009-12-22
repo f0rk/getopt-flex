@@ -5,6 +5,7 @@ use Test::Exception;
 use Getopt::Flex;
 
 my $foo;
+my $bar;
 my @arr;
 my %has;
 
@@ -161,3 +162,7 @@ $op->getopts();
 is($#keys, 0, 'keys set with 1 value');
 is($keys[0], 'aa', 'keys has 0th elem aa');
 is($has{'aa'}, 'cats', 'key aa set with cats');
+
+$cfg = {
+    'non_option_mode' => 'VALUE_RET_0',
+};
