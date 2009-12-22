@@ -374,9 +374,9 @@ Getopt::Flex object.
   
   my $op = Getopt::Flex->new({spec => $spec});
 
-You then call C<$op->getopts()> to process options. Getopt::Flex automatically
+You then call C<getopts()> to process options. Getopt::Flex automatically
 uses the global @ARGV array for options. If you would like to supply your own,
-you may use C<set_args>, like this:
+you may use C<set_args()>, like this:
 
   $op->set_args(\@args);
 
