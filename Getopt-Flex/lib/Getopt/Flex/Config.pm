@@ -12,6 +12,9 @@ enum 'NonOptionMode' => qw(IGNORE SWITCH_RET_0 VALUE_RET_0 STOP_RET_0 STOP);
 #valid long_option_mode arguments           
 enum 'LongOptionMode' => qw(REQUIRE_DOUBLE_DASH SINGLE_OR_DOUBLE);
 
+#valid case_mode arguments
+enum 'CaseMode' => qw(SENSITIVE INSENSITIVE);
+
 #how to react when encountering something that
 #isn't an option
 has 'non_option_mode' => (
@@ -54,6 +57,13 @@ has 'desc' => (
     is => 'ro',
     isa => 'Str',
     default => '',
+);
+
+#for allowing case-insensitive handling of options
+has 'case_mode' => (
+    is => 'ro',
+    isa => 'CaseMode',
+    default => 'SENSITIVE',
 );
 
 =head1 NAME

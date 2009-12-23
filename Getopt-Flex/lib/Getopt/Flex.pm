@@ -329,6 +329,7 @@ configuration with all possible options:
       'non_option_mode' => 'STOP',
       'bundling' => 0,
       'long_option_mode' => 'SINGLE_OR_DOUBLE',
+      'case_mode' => 'INSENSITIVE',
       'usage' => 'foo [OPTIONS...] [FILES...]',
       'desc' => 'Use foo to manage your foo archives'
   };
@@ -370,7 +371,8 @@ C<REQUIRE_DOUBLE_DASH>.
 Warning: If you pass an illegal switch into a bundle, it may happen that the
 entire bundle is treated as invalid, or at least several of its switches.
 For this reason, it is recommended that you set I<non_option_mode> to
-C<SWITCH_RET_0> when bundling is turned on.
+C<SWITCH_RET_0> when bundling is turned on. See L<Configuring non_option_mode>
+for more information.
 
 =head2 Configuring long_option_mode
 
@@ -391,6 +393,18 @@ Will be treated as valid, and:
 Will be treated as invalid. Setting I<long_option_mode> to C<SINGLE_OR_DOUBLE>
 would make the second example valid as well. Attempting to set I<bundling> to
 C<1> and I<long_option_mode> to C<SINGLE_OR_DOUBLE> will signal an error.
+
+=head2 Configuring case_mode
+
+I<case_mode> allows you to specify whether or not options are allowed to be
+entered in any case. The following values are valid:
+
+  SENSITIVE INSENSITIVE
+
+The default is C<SENSITIVE>. If you set I<case_mode> to C<INSENSITIVE>, then
+switches will be matched without regard to case. For instance, C<--foo>, C<--FOO>,
+C<--FoO>, etc. all represent the same switch when case insensitive matching is
+turned on.
 
 =head2 Configuring usage
 
@@ -469,7 +483,7 @@ sub BUILD {
     $self->_config(Getopt::Flex::Config->new($self->config()));
     
     #create the spec
-    $self->_spec(Getopt::Flex::Spec->new({ spec => $self->spec() }));
+    $self->_spec(Getopt::Flex::Spec->new({ spec => $self->spec(), config => $self->_config() }));
     
     return;
 }
@@ -645,6 +659,7 @@ sub getopts {
                     $self->_set_error("Encountered illegal switch $arr[0]");
                     return 0;
                 }
+                next;
             }
 
             if($self->_spec()->set_switch($arr[0], $arr[1])) {
@@ -731,12 +746,12 @@ sub _switch_type {
     
     #could be any kind
     #single dash, single letter, definitely short
-    if($switch =~ /^-[a-zA-Z?]$/) {
+    if($switch =~ /^-[a-zA-Z_?]$/) {
         return $_ST_SHORT;
     }
     
     #single dash, single letter, equal sign, definitely short
-    if($switch =~ /^-[a-zA-Z?]=.+$/) {
+    if($switch =~ /^-[a-zA-Z_?]=.+$/) {
         return $_ST_SHORT;
     }
     
