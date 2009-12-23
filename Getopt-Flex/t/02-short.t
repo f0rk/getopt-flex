@@ -15,6 +15,7 @@ my $sp = {
     }
 };
 
+$foo = '';
 my $op = Getopt::Flex->new({spec => $sp});
 my @args = qw(-f bar);
 $op->set_args(\@args);
@@ -27,6 +28,7 @@ is($#va, 0, 'va contains 1 value');
 is($#ia, -1, 'ia contains 0 values');
 is($#ea, -1, 'ea contains 0 values');
 
+$foo = '';
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=baz);
 $op->set_args(\@args);
@@ -39,12 +41,14 @@ is($#va, 0, 'va contains 1 value');
 is($#ia, -1, 'ia contains 0 values');
 is($#ea, -1, 'ea contains 0 values');
 
+$foo = '';
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-fbag);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 'bag', '-f set with bag');
 
+$foo = '';
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f-boo);
 $op->set_args(\@args);
@@ -63,6 +67,8 @@ $sp = {
   },
 };
 
+$foo = '';
+$bar = '';
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f aaa -b bbb);
 $op->set_args(\@args);
@@ -85,18 +91,21 @@ $sp = {
   },
 };
 
+$foo = '';
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f box);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 'box', '-f set with box');
 
+$foo = '';
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
 like($op->get_error(), qr/requires value/, 'Failed to parse because -f missing required value');
 
+$foo = '';
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw();
 $op->set_args(\@args);
@@ -111,54 +120,63 @@ $sp = {
     }
 };
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 1);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 1, '-f set with 1');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f1);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 1, '-f set with 1');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=1);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 1, '-f set with 1');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 2e2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
 like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f2e2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
 like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=2e2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
 like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 2.2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
 like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f2.2);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
 like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=2.2);
 $op->set_args(\@args);
@@ -198,72 +216,84 @@ $sp = {
     }
 };
 
+$foo = 1;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 0);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 0, '-f set to 0');
 
+$foo = 1;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f0);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 0, '-f set to 0');
 
+$foo = 1;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=0);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 0, '-f set to 0');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 1);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 1, '-f set to 1');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f1);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 1, '-f set to 1');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=1);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 1, '-f set to 1');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f 2.2);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 2.2, '-f set to 2.2');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=2.2);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 2.2, '-f set to 2.2');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f2.2);
 $op->set_args(\@args);
 $op->getopts();
 is($foo, 2.2, '-f set to 2.2');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f aaa);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
 like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-f=aaa);
 $op->set_args(\@args);
 ok(!$op->getopts(), 'Fails in parsing');
 like($op->get_error(), qr/type constraint/, 'Failed to parse because value fails type constraint');
 
+$foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-faaa);
 $op->set_args(\@args);
