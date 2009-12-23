@@ -20,6 +20,13 @@ has '_argmap' => (
     default => sub { {} },
     init_arg => undef,
 );
+
+has '_config' => (
+    is => 'ro',
+    isa => 'Getopt::Flex::Config',
+    required => 1,
+    init_arg => 'config',
+);
                 
 =head1 NAME
 
@@ -51,6 +58,10 @@ sub BUILD {
         
         #map each argument onto its aliases
         foreach my $alias (@aliases) {
+            if($self->_config()->case_mode() eq 'INSENSITIVE') {
+                $alias = lc($alias);
+            }
+            
             #no duplicate aliases (or primary names) allowed
             if(defined($argmap->{$alias})) {
                 my $sp = $argmap->{$alias}->switchspec();
@@ -70,6 +81,11 @@ Check whether or a not a switch belongs to this specification
 
 sub check_switch {
     my ($self, $switch) = @_;
+
+    if($self->_config()->case_mode() eq 'INSENSITIVE') {
+        $switch = lc($switch);
+    }
+    
     return defined($self->_argmap()->{$switch});
 }
 
@@ -83,6 +99,10 @@ sub set_switch {
     my ($self, $switch, $val) = @_;
     
     Carp::confess "No such switch $switch\n" if !$self->check_switch($switch);
+    
+    if($self->_config()->case_mode() eq 'INSENSITIVE') {
+        $switch = lc($switch);
+    }
     
     return $self->_argmap()->{$switch}->set_value($val);
 }
@@ -98,6 +118,10 @@ sub switch_requires_val {
     
     Carp::confess "No such switch $switch\n" if !$self->check_switch($switch);
     
+    if($self->_config()->case_mode() eq 'INSENSITIVE') {
+        $switch = lc($switch);
+    }
+    
     return $self->_argmap()->{$switch}->requires_val();
 }
 
@@ -111,6 +135,10 @@ sub get_switch_error {
     my ($self, $switch) = @_;
     
     Carp::confess "No such switch $switch\n" if !$self->check_switch($switch);
+    
+    if($self->_config()->case_mode() eq 'INSENSITIVE') {
+        $switch = lc($switch);
+    }
     
     return $self->_argmap()->{$switch}->error();
 }

@@ -630,10 +630,12 @@ $sp = {
 $foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-F);
+$op->set_args(\@args);
 ok($op->getopts(), 'Parses ok');
 
 $foo = 0;
 $op = Getopt::Flex->new({spec => $sp});
 @args = qw(-F=1);
+$op->set_args(\@args);
 ok($op->getopts(), 'Parses ok');
 is($foo, 0, '-f not set');
