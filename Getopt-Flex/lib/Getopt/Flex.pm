@@ -94,10 +94,6 @@ has 'error' => (
     default => '',    
 );
 
-=head1 NAME
-
-Getopt::Flex - Option parsing, done differently
-
 =head1 SYNOPSIS
 
   use Getopt::Flex;
@@ -164,7 +160,7 @@ Then, create a specification, like so:
       'foo|f' => {'var' => \$foo, 'type' => 'Str'},
   };
 
-For more information about specifications, see L<Specifying Options>. Create
+For more information about specifications, see L<Specifying Options to Getopt::Flex>. Create
 a new Getopt::Flex object:
 
   my $op = Getopt::Flex->new({spec => $spec, config => $cfg});
@@ -173,11 +169,49 @@ And finally invoke the option processor with:
 
   $op->getopts();
 
+Getopt::Flex automatically uses the global @ARGV array for options.
+If you would like to supply your own, you may use C<set_args()>, like this:
+
+  $op->set_args(\@args);
+
 In the event of an error, C<getopts()> will return false,
 and set an error message which can be retrieved via C<get_error()>.
-For examples, please see the examples/ directory.
 
-=head2 Specifying Options
+Getopt::Flex also stores information about valid options, invalid options
+and extra options. Valid options are those which Getopt::Flex recognized
+as valid, and invalid are those that were not. Anything that is not an
+option can be found in extra options. These values can be retrieved via:
+
+  my @va = $op->get_valid_args();
+  my @ia = $op->get_invalid_args();
+  my @ea = $op->get_extra_args();
+
+Getopt::Flex may also be used to provide an automatically formatted help
+message. By setting the appropriate I<desc> when specifying an option,
+and by setting I<usage> and I<desc> in the configuration, a full help
+message can be provided, and is available via:
+
+  my $help = $op->get_help();
+
+Usage and description are also available, via:
+
+  my $usage = $op->get_usage();
+  my $desc = $op->get_desc();
+
+An automatically generated help message would look like this:
+
+  Usage: foo [OPTIONS...] [FILES...]
+  
+  Use this to manage your foo files
+  
+  Options:
+  
+        --alpha, --beta,          Pass any greek letters to this argument
+        --delta, --eta, --gamma
+    -b, --bar                     When set, indicates to use bar
+    -f, --foo                     Expects a string naming the foo
+
+=head1 Specifying Options to Getopt::Flex
 
 Options are specified by way of a hash whose keys define valid option
 forms and whose values are hashes which contain information about the
@@ -425,59 +459,6 @@ I<desc> may be set with a string describing the program. It will be used when
 providing help automatically.
 
 The default value is the empty string.
-
-=head1 Using Getopt::Flex
-
-Using Getopt::Flex is simple. You define a specification, as described above,
-optionally define a configuration, as desribed above, and then construct a new
-Getopt::Flex object.
-
-  my $spec = {
-      'foo|f' => {'var' => \$foo, 'type' => 'Str'},
-  };
-  
-  my $op = Getopt::Flex->new({spec => $spec});
-
-You then call C<getopts()> to process options. Getopt::Flex automatically
-uses the global @ARGV array for options. If you would like to supply your own,
-you may use C<set_args()>, like this:
-
-  $op->set_args(\@args);
-
-Which expects an array reference. Getopt::Flex also stores information about
-valid options, invalid options and extra options. Valid options are those
-which Getopt::Flex recognized as valid, and invalid are those that were not.
-Anything that is not an option can be found in extra options. These values
-can be retrieved via:
-
-  my @va = $op->get_valid_args();
-  my @ia = $op->get_invalid_args();
-  my @ea = $op->get_extra_args();
-
-Getopt::Flex may also be used to provide an automatically formatted help
-message. By setting the appropriate I<desc> when specifying an option,
-and by setting I<usage> and I<desc> in the configuration, a full help
-message can be provided, and is available via:
-
-  my $help = $op->get_help();
-
-Usage and description are also available, via:
-
-  my $usage = $op->get_usage();
-  my $desc = $op->get_desc();
-
-An automatically generated help message would look like this:
-
-  Usage: foo [OPTIONS...] [FILES...]
-  
-  Use this to manage your foo files
-  
-  Options:
-  
-        --alpha, --beta,          Pass any greek letters to this argument
-        --delta, --eta, --gamma
-    -b, --bar                     When set, indicates to use bar
-    -f, --foo                     Expects a string naming the foo
 
 =head1 METHODS
 
