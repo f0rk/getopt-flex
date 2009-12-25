@@ -7,7 +7,6 @@ use Moose;
 use Moose::Util::TypeConstraints;
 use Moose::Meta::TypeConstraint;
 use MooseX::StrictConstructor;
-use Perl6::Junction qw(any none);
 
 #types an argument know how to be
 subtype 'ValidType'
@@ -157,12 +156,12 @@ sub BUILD {
     
     #check supplied reference type
     my $reft = ref($self->var());
-    if($reft eq none(qw(ARRAY HASH SCALAR))) {
+    if($reft ne 'ARRAY' && $reft ne 'HASH' && $reft ne 'SCALAR') {
         Carp::confess "supplied var must be a reference to an ARRAY, HASH, or SCALAR\n";
     }
     
     #make sure the reference has the correct type
-    if($reft eq any(qw(ARRAY HASH))) {
+    if($reft eq 'ARRAY' || $reft eq 'HASH') {
         my $re = qr/$reft/i;
         
         if($self->type() !~ $re) {
@@ -362,7 +361,8 @@ Check whether or not this argument requires a value
 
 sub requires_val {
     my ($self) = @_;
-    return $self->type eq none(qw(Bool Inc));
+    return !Moose::Util::TypeConstraints::find_or_parse_type_constraint($self->type())->is_a_type_of('Bool')
+            && $self->type() ne 'Inc';
 }
 
 =begin Pod::Coverage

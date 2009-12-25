@@ -5,18 +5,16 @@ package Getopt::Flex;
 use Clone;
 use Moose;
 use MooseX::StrictConstructor;
-use Readonly;
 use Getopt::Flex::Config;
 use Getopt::Flex::Spec;
-use Perl6::Junction qw(any);
 
 #return values for the function that
 #determines the type of switch it is
 #inspecting
-Readonly::Scalar my $_ST_LONG => 1;
-Readonly::Scalar my $_ST_SHORT => 2;
-Readonly::Scalar my $_ST_BUNDLED => 3;
-Readonly::Scalar my $_ST_NONE => 4;
+my $_ST_LONG = 1;
+my $_ST_SHORT = 2;
+my $_ST_BUNDLED = 3;
+my $_ST_NONE = 4;
 
 #the raw spec defining the options to be parsed
 #and how they are to be handled
@@ -355,6 +353,8 @@ false. This would be useful if your program expects no other input other than
 option switches. C<STOP_RET_0> means that if an illegal switch or any value is
 encountered that false should be returned immediately.
 
+The default value is C<STOP>.
+
 =head2 Configuring bundling
 
 I<bundling> is a boolean indicating whether or not bundled switches may be used.
@@ -374,6 +374,8 @@ entire bundle is treated as invalid, or at least several of its switches.
 For this reason, it is recommended that you set I<non_option_mode> to
 C<SWITCH_RET_0> when bundling is turned on. See L<Configuring non_option_mode>
 for more information.
+
+The default value is C<0>.
 
 =head2 Configuring long_option_mode
 
@@ -395,6 +397,8 @@ Will be treated as invalid. Setting I<long_option_mode> to C<SINGLE_OR_DOUBLE>
 would make the second example valid as well. Attempting to set I<bundling> to
 C<1> and I<long_option_mode> to C<SINGLE_OR_DOUBLE> will signal an error.
 
+The default value is C<REQUIRE_DOUBLE_DASH>.
+
 =head2 Configuring case_mode
 
 I<case_mode> allows you to specify whether or not options are allowed to be
@@ -402,20 +406,25 @@ entered in any case. The following values are valid:
 
   SENSITIVE INSENSITIVE
 
-The default is C<SENSITIVE>. If you set I<case_mode> to C<INSENSITIVE>, then
-switches will be matched without regard to case. For instance, C<--foo>, C<--FOO>,
-C<--FoO>, etc. all represent the same switch when case insensitive matching is
-turned on.
+If you set I<case_mode> to C<INSENSITIVE>, then switches will be matched without
+regard to case. For instance, C<--foo>, C<--FOO>, C<--FoO>, etc. all represent
+the same switch when case insensitive matching is turned on.
+
+The default value is C<SENSITIVE>. 
 
 =head2 Configuring usage
 
 I<usage> may be set with a string indicating appropriate usage of the program.
 It will be used to provide help automatically.
 
+The default value is the empty string.
+
 =head2 Configuring desc
 
 I<desc> may be set with a string describing the program. It will be used when
 providing help automatically.
+
+The default value is the empty string.
 
 =head1 Using Getopt::Flex
 
@@ -820,13 +829,14 @@ sub _parse_bundled_switch {
     $switch =~ s/^-//;
     
     my %rh = ();
+    my %fk = ();
     
     my $last_switch;
     for(my $i = 0; $i < length($switch); ++$i) {
         my $c = substr($switch, $i, 1);
         
         
-        if($c eq any(keys %rh)) {
+        if(defined($fk{$c})) {
             if(!defined($last_switch)) {
                 #oops, illegal switch
                 #should never get here, make sure switch
@@ -839,6 +849,7 @@ sub _parse_bundled_switch {
             last;
         } elsif($self->_spec()->check_switch($c)) {
             $rh{$c} = undef;
+            $fk{$c} = 1;
             $last_switch = $c;
             next;
         } else { #rest of the string was an argument to last switch
