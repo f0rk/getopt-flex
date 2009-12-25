@@ -157,14 +157,14 @@ Then, create a configuration, if necassary, like so:
 
   my $cfg = { 'non_option_mode' => 'STOP' };
 
-For more information about configuration, see L<Specifying a configuration>.
+For more information about configuration, see L<Configuring Getopt::Flex>.
 Then, create a specification, like so: 
 
   my $spec = {
       'foo|f' => {'var' => \$foo, 'type' => 'Str'},
   };
 
-For more information about specifications, see L<Specifying options>. Create
+For more information about specifications, see L<Specifying Options>. Create
 a new Getopt::Flex object:
 
   my $op = Getopt::Flex->new({spec => $spec, config => $cfg});
