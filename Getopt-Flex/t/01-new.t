@@ -1,5 +1,5 @@
 use Getopt::Flex;
-use Test::More tests => 56;
+use Test::More tests => 55;
 use Test::Exception;
 
 use warnings;
@@ -396,14 +396,6 @@ dies_ok { Getopt::Flex->new({spec => {
         }
     }})
 } 'Dies with duplicate alias';
-
-#dies, missing 'var'
-dies_ok { Getopt::Flex->new({spec => {
-        'foo|f' => {
-            'type' => 'Str',
-        }
-    }})
-} 'Dies with missing required argument \'var\'';
 
 #dies, missing 'type'
 dies_ok { Getopt::Flex->new({spec => {

@@ -56,6 +56,8 @@ sub BUILD {
         
         my @aliases = @{$argument->aliases()};
         
+        $argmap->{$switch_spec} = $argument;
+        
         #map each argument onto its aliases
         foreach my $alias (@aliases) {
             if($self->_config()->case_mode() eq 'INSENSITIVE') {
@@ -141,6 +143,35 @@ sub get_switch_error {
     }
     
     return $self->_argmap()->{$switch}->error();
+}
+
+=head2 get_switch
+
+Passing this function the name of a switch (or the switch spec) will
+cause it to return the value of a ScalarRef, a HashRef, or an ArrayRef
+(based on the type given), or undef if the given switch does not
+correspond to any defined switch.
+
+=cut
+
+sub get_switch {
+    my ($self, $switch) = @_;
+    
+    return undef if !$self->check_switch($switch);
+    
+    if($self->_config()->case_mode() eq 'INSENSITIVE') {
+        $switch = lc($switch);
+    }
+    
+    my $arg = $self->_argmap()->{$switch};
+    
+    if($arg->type() =~ /^ArrayRef/) {
+        return $arg->var();
+    } elsif($arg->type() =~ /^HashRef/) {
+        return $arg->var();
+    } else {
+        return ${$arg->var()};
+    }
 }
 
 =begin Pod::Coverage

@@ -1029,6 +1029,21 @@ Returns an error message if set, empty string otherwise.
 
 =cut
 
+=head2 get_switch
+
+Passing this function the name of a switch (or the switch spec) will
+cause it to return the value of a ScalarRef, a HashRef, or an ArrayRef
+(based on the type given), or undef if the given switch does not
+correspond to any defined switch.
+
+=cut
+
+sub get_switch {
+    my ($self, $switch) = @_;
+    
+    return $self->_spec()->get_switch($switch);
+}
+
 =begin Pod::Coverage
 
   BUILD

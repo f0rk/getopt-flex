@@ -54,7 +54,8 @@ has 'aliases' => (
 has 'var' => (
     is => 'ro',
     isa => 'ScalarRef|ArrayRef|HashRef',
-    required => 1,
+    writer => '_set_var',
+    predicate => 'has_var',
 );
 
 #the type of values to accept for this variable                
@@ -117,7 +118,6 @@ has 'error' => (
     writer => '_set_error',
 );
             
-            
 =head1 NAME
 
 Getopt::Flex::Spec::Argument - Specification class for Getopt::Flex
@@ -152,6 +152,19 @@ sub BUILD {
     && !$tc->is_a_type_of('Num')
     && !$tc->is_a_type_of('Bool')) {
         Carp::confess "Given type (or parameter) $type is not simple, i.e. it must be a subtype of Str, Num, Int, or Bool\n";
+    }
+    
+    if(!$self->has_var()) {
+        if($self->type() =~ /^ArrayRef/) {
+            my @arr = ();
+            $self->_set_var(\@arr);
+        } elsif($self->type() =~ /^HashRef/) {
+            my %has = ();
+            $self->_set_var(\%has);
+        } else {
+            my $var;
+            $self->_set_var(\$var);
+        }
     }
     
     #check supplied reference type
