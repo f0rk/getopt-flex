@@ -1067,6 +1067,14 @@ sub get_switch {
 
 =cut
 
+=head1 REPOSITORY
+
+The source code repository for this project is located at:
+
+  http://github.com/f0rk/getopt-flex
+
+=cut
+
 no Moose;
 
 1;
