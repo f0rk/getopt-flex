@@ -132,8 +132,8 @@ regard to their case, but these are not enabled by defualt.
 Getopt::Flex is an alternative to other modules in the Getopt::
 namespace, including the much used L<Getopt::Long> and
 L<Getopt::Long::Descriptive>. Other options include L<App::Cmd>
-and L<MooseX::Getopt>. If you don't like this solution,
-try one of those.
+and L<MooseX::Getopt> (which actually sit on top of L<Getopt::Long::Descriptive>).
+If you don't like this solution, try one of those.
 
 =head1 Getting started with Getopt::Flex
 
