@@ -2,6 +2,8 @@ package Getopt::Flex::Config;
 
 # ABSTRACT: Getopt::Flex's way of handling config
 
+use strict; #shut up cpants
+use warnings; #shut up cpants
 use Moose;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;

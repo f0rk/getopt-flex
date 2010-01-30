@@ -2,6 +2,8 @@ package Getopt::Flex::Spec;
 
 # ABSTRACT: Getopt::Flex's way of handling an option spec
 
+use strict; #shut up cpants
+use warnings; #shut up cpants
 use Moose;
 use Getopt::Flex::Spec::Argument;
 use MooseX::StrictConstructor;

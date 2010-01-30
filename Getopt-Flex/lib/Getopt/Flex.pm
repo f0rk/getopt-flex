@@ -2,6 +2,8 @@ package Getopt::Flex;
 
 # ABSTRACT: Option parsing, done different.
 
+use strict; #shut up cpants
+use warnings; #shut up cpants
 use Clone;
 use Moose;
 use MooseX::StrictConstructor;

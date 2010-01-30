@@ -2,6 +2,8 @@ package Getopt::Flex::Spec::Argument;
 
 # ABSTRACT: Getopt::Flex's way of specifying arguments
 
+use strict; #shut up cpants
+use warnings; #shut up cpants
 use Carp;
 use Moose;
 use Moose::Util::TypeConstraints;
