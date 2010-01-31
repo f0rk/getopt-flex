@@ -41,11 +41,16 @@ my $sp = {
         'type' => 'Bool',
         'desc' => 'Print out this help',
     },
+    'size|s' => {
+        'var' => \$max_dim,
+        'type' => 'Int',
+        'desc' => 'Maximum size of any side',
+    },
 };
 
 my $op = Getopt::Flex->new({config => $cfg, spec => $sp});
 if(!$op->getopts()) {
-    print "**ERRPR**: ", $op->error();
+    print "**ERROR**: ", $op->error();
     print $op->get_help();
     exit(1);
 }
