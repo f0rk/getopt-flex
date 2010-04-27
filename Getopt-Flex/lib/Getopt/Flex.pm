@@ -122,13 +122,14 @@ has 'error' => (
 
 =head1 DESCRIPTION
 
-Getopt::Flex is an object-oriented way to go about option parsing.
-Creating an option specification is easy and declarative, and
-configuration is optional and defaults to a few, smart parameters.
-Generally, it adheres to the POSIX syntax with GNU extensions for
-command line options. As a result, options may be longer than a
-single letter, and would begin with "--". Support also exists
-for bundling of command line options and using switches without
+Getopt::Flex makes defining and documenting command line options in
+your program easy. It has a consistent object-oriented interface. 
+Creating an option specification is declarative and configuration 
+is optional and defaults to a few, smart parameters. Generally,
+it adheres to the POSIX syntax with GNU extensions for command 
+line options. As a result, options may be longer than a single 
+letter, and may begin with "--". Support also exists for 
+bundling of command line options and using switches without
 regard to their case, but these are not enabled by defualt.
 
 Getopt::Flex is an alternative to other modules in the Getopt::
