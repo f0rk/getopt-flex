@@ -65,6 +65,8 @@ sub BUILD {
             if($self->_config()->case_mode() eq 'INSENSITIVE') {
                 $alias = lc($alias);
             }
+
+			next if $switch_spec eq $alias;
             
             #no duplicate aliases (or primary names) allowed
             if(defined($argmap->{$alias})) {

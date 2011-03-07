@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 149;
+use Test::More tests => 151;
 use Getopt::Flex;
 
 my $foo;
@@ -639,3 +639,17 @@ $op = Getopt::Flex->new({spec => $sp});
 $op->set_args(\@args);
 ok($op->getopts(), 'Parses ok');
 is($foo, 0, '-f not set');
+
+$sp = {
+	'f' => {
+		'var' => \$foo,
+		'type' => 'Str',
+	}
+};
+
+$foo = '';
+$op = Getopt::Flex->new({spec => $sp});
+@args = qw(-f bar);
+$op->set_args(\@args);
+ok($op->getopts(), 'Parses ok');
+is($foo, 'bar', 'foo set to bar');
