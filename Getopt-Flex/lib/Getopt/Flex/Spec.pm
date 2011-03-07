@@ -49,7 +49,19 @@ sub BUILD {
     my $spec = $self->spec();
     
     my $argmap = $self->_argmap();
-    
+
+	my $help = 0;
+	if($self->_config()->auto_help()) {
+		if(defined($spec->{'help|h'}) || defined($spec->{'help'}) || defined($spec->{'h'})) {
+			Carp::croak "auto_help set, but a switch matching 'help|h' already exists, exiting.";
+		}
+
+		$spec->{'help|h'} = {
+			'var' => \$help,
+			'type' => 'Bool',
+		};
+	}
+
     #create each argument in turn
     foreach my $switch_spec (keys %{$spec}) {
         $spec->{$switch_spec}->{'switchspec'} = $switch_spec;

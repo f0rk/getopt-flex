@@ -68,6 +68,14 @@ has 'case_mode' => (
     default => 'SENSITIVE',
 );
 
+#if true, specifying the --help switch (or -h) will cause the help
+#to be printed, and exit(0) to be called.
+has 'auto_help' => (
+	is => 'ro',
+	isa => 'Bool',
+	default => 0,
+);
+
 =head1 NAME
 
 Getopt::Flex::Config - Configuration class for Getopt::Flex
