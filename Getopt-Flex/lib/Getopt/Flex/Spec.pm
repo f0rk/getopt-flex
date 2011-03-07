@@ -167,9 +167,9 @@ sub get_switch {
     
     my $arg = $self->_argmap()->{$switch};
     
-    if($arg->type() =~ /^ArrayRef/) {
+    if($arg->get_type() =~ /^ArrayRef/) {
         return $arg->var();
-    } elsif($arg->type() =~ /^HashRef/) {
+    } elsif($arg->get_type() =~ /^HashRef/) {
         return $arg->var();
     } else {
         return ${$arg->var()};

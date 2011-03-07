@@ -65,6 +65,7 @@ has 'type' => (
     is => 'ro',
     isa => 'ValidType',
     required => 1,
+	reader => 'get_type',
 );
 
 #the description of this variable, for autohelp
@@ -137,14 +138,14 @@ sub BUILD {
     my ($self) = @_;
     
     #check the type supplied
-    if(!Moose::Util::TypeConstraints::find_or_parse_type_constraint($self->type())) {
-        my $type = $self->type();
+    if(!Moose::Util::TypeConstraints::find_or_parse_type_constraint($self->get_type())) {
+        my $type = $self->get_type();
         Carp::confess "Type constraint $type does not exist or cannot be created\n";
     }
     
     #check that the type supplied is a "simple" type or that the parameterizable
     #type supplied has a parameter which is also simple
-    my $type = $self->type();
+    my $type = $self->get_type();
     if($type =~ m/^([a-zA-Z]+)\[([a-zA-Z]+)\]$/) {
         $type = $2;
     }
@@ -157,10 +158,10 @@ sub BUILD {
     }
     
     if(!$self->has_var()) {
-        if($self->type() =~ /^ArrayRef/) {
+        if($self->get_type() =~ /^ArrayRef/) {
             my @arr = ();
             $self->_set_var(\@arr);
-        } elsif($self->type() =~ /^HashRef/) {
+        } elsif($self->get_type() =~ /^HashRef/) {
             my %has = ();
             $self->_set_var(\%has);
         } else {
@@ -179,8 +180,8 @@ sub BUILD {
     if($reft eq 'ARRAY' || $reft eq 'HASH') {
         my $re = qr/$reft/i;
         
-        if($self->type() !~ $re) {
-            my $type = $self->type();
+        if($self->get_type() !~ $re) {
+            my $type = $self->get_type();
             Carp::confess "supplied var has wrong type $type\n";
         }
     }
@@ -192,23 +193,23 @@ sub BUILD {
     }
     
     #check the type of the default
-    if($self->has_default() && !Moose::Util::TypeConstraints::find_or_parse_type_constraint($self->type())->check($self->default())) {
+    if($self->has_default() && !Moose::Util::TypeConstraints::find_or_parse_type_constraint($self->get_type())->check($self->default())) {
         my $def = $self->default();
-        my $type = $self->type();
+        my $type = $self->get_type();
         Carp::confess "default $def fails type constraint $type\n";
     }
     
     #check the default against the validator
     if($self->has_default() && $self->has_validator()) {
         my $fn = $self->validator();
-        if($self->type() =~ /^ArrayRef/) {
+        if($self->get_type() =~ /^ArrayRef/) {
             my @defs = @{$self->default()};
             foreach my $def (@defs) {
                 if(!&$fn($def)) {
                     Carp::confess "default $def fails supplied validation check\n";
                 }
             }
-        } elsif($self->type() =~ /^HashRef/) {
+        } elsif($self->get_type() =~ /^HashRef/) {
             my %defs = %{$self->default()};
             foreach my $key (keys %defs) {
                 if(!&$fn($defs{$key})) {
@@ -225,10 +226,10 @@ sub BUILD {
     
     #set the default value onto the supplied var
     if($self->has_default()) {
-        if($self->type() =~ /^ArrayRef/) {
+        if($self->get_type() =~ /^ArrayRef/) {
             my $var = $self->var();
             @$var = @{$self->default()};
-        } elsif($self->type() =~ /^HashRef/) {
+        } elsif($self->get_type() =~ /^HashRef/) {
             my $var = $self->var();
             %$var = %{$self->default()};
         } else { #scalar
@@ -316,24 +317,24 @@ sub set_value {
     my ($self, $val) = @_;
     
     #get the type parameter of the compound type
-    my $type = $self->type();
+    my $type = $self->get_type();
     if($type =~ m/^([a-zA-Z]+)\[([a-zA-Z]+)\]$/) {
         $type = $2;
     }
     
     #handle different types
     my $var = $self->var;
-    if($self->type =~ /ArrayRef/) {
+    if($self->get_type() =~ /ArrayRef/) {
         return 0 if !$self->_check_val($type, $val);
         push(@$var, $val);
-    } elsif($self->type =~ /HashRef/) {
+    } elsif($self->get_type() =~ /HashRef/) {
         my @kv = split(/=/, $val);
         return 0 if !$self->_check_val($type, $kv[1]);
         $var->{$kv[0]} = $kv[1];
         $val = $kv[1];
-    } elsif($self->type eq 'Inc') {
+    } elsif($self->get_type() eq 'Inc') {
         ++$$var;
-    } elsif($self->type eq 'Bool') {
+    } elsif($self->get_type() eq 'Bool') {
         $$var = 1;
     } else {
         return 0 if !$self->_check_val($type, $val);
@@ -376,8 +377,8 @@ Check whether or not this argument requires a value
 
 sub requires_val {
     my ($self) = @_;
-    return !Moose::Util::TypeConstraints::find_or_parse_type_constraint($self->type())->is_a_type_of('Bool')
-            && $self->type() ne 'Inc';
+    return !Moose::Util::TypeConstraints::find_or_parse_type_constraint($self->get_type())->is_a_type_of('Bool')
+            && $self->get_type() ne 'Inc';
 }
 
 =begin Pod::Coverage
