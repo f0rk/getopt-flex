@@ -5,6 +5,7 @@ package Getopt::Flex;
 use strict; #shut up cpants
 use warnings; #shut up cpants
 use Clone;
+use Hash::Merge qw(merge);
 use Moose;
 use MooseX::StrictConstructor;
 use Getopt::Flex::Config;
@@ -24,6 +25,7 @@ has 'spec' => (
     is => 'ro',
     isa => 'HashRef[HashRef[Str|CodeRef|ScalarRef|ArrayRef|HashRef]]',
     required => 1,
+	writer => '_set_spec',
 );
 
 #the parsed Getopt::Flex::Spec object
@@ -256,6 +258,9 @@ The following is an example of all possible arguments to an option specification
           'default' => 'input.txt',
       }
   };
+
+Additional specifications may be added by calling C<add_spec>. This allows
+one to dynamically build up a set of valid options.
 
 =head2 Specifying a var
 
@@ -913,6 +918,25 @@ sub _parse_bundled_switch {
     $rh{'~~last'} = $last_switch;
     
     return \%rh;
+}
+
+=head2 add_spec
+
+Add an additional spec to the current spec.
+
+=cut
+
+sub add_spec {
+	my ($self, $spec) = @_;
+
+	my $ospec = $self->spec();
+	my $nspec = merge($spec, $ospec);
+
+	$self->_set_spec($nspec);
+
+    $self->_spec(Getopt::Flex::Spec->new({ spec => $self->spec(), config => $self->_config() }));
+
+	return $nspec;
 }
 
 =head2 set_args
